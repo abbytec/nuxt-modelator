@@ -1,41 +1,43 @@
 # nuxt-modelator
 
-Monorepo que alberga el módulo `nuxt-modelator` y un proyecto de ejemplo basado en Nuxt 3.
+[Lee esto en español](README.es.md)
 
-`nuxt-modelator` permite describir tu dominio con modelos TypeScript y, a partir de ellos, generar endpoints REST, tiendas de Pinia y ejecutar cadenas de middlewares reutilizables.
+Monorepo hosting the `nuxt-modelator` module and a Nuxt 3 example project.
 
-## Contenido del repositorio
+`nuxt-modelator` lets you describe your domain with TypeScript models and generates REST endpoints, Pinia stores, and reusable middleware chains.
 
-- `nuxt-modelator/` – código fuente del módulo.
-- `nuxt-modelator-example/` – aplicación Nuxt que demuestra su uso. Sus modelos viven en `domain/models`.
+## Repository contents
 
-## Instalación rápida
+- `nuxt-modelator/` – module source code.
+- `nuxt-modelator-example/` – Nuxt app demonstrating usage. Its models live in `domain/models`.
+
+## Quick install
 
 ```bash
 npm install nuxt-modelator
-# o
+# or
 pnpm add nuxt-modelator
 ```
 
-En `nuxt.config.ts`:
+In `nuxt.config.ts`:
 
 ```ts
 export default defineNuxtConfig({
   modules: ['nuxt-modelator'],
   modelator: {
-    modelsDir: 'domain/models' // ruta donde se colocan los modelos
+    modelsDir: 'domain/models' // directory where models are placed
   }
 })
 ```
 
-## Propósito
+## Purpose
 
-- Centralizar la lógica de dominio en modelos.
-- Evitar repetición al generar endpoints y estado.
-- Componer middlewares que funcionan tanto en cliente como en servidor.
+- Centralize domain logic in models.
+- Avoid repetition when generating endpoints and state.
+- Compose middlewares that work on both client and server.
 
-Para ver un ejemplo funcional revisa `nuxt-modelator-example` y ejecuta `pnpm install && pnpm dev` dentro de esa carpeta.
+For a working example check `nuxt-modelator-example` and run `pnpm install && pnpm dev` inside that folder.
 
-## Licencia
+## License
 
 MIT
