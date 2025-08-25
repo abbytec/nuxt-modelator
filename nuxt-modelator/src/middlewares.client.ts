@@ -18,7 +18,11 @@ export {
         putRequest,
         putAllRequest,
         deleteRequest,
-        deleteAllRequest,
-        logRequest,
-        run,
-} from "./middlewares/index.js";
+         deleteAllRequest,
+         logRequest,
+         run,
+         throttle,
+         debounce,
+         retryable,
+         cacheable,
+ } from "./middlewares/index.js";

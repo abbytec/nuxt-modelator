@@ -6,6 +6,7 @@ import "./client/data-middlewares.js";
 import "./hybrid/validation-middlewares.js";
 import "./hybrid/http-middlewares.js";
 import "./hybrid/run-middlewares.js";
+import "./hybrid/control-middlewares.js";
 
 // Exportar registries y funciones principales
 export { clientMiddlewares, serverMiddlewares, hybridMiddlewares, getAllRegisteredMiddlewares } from "./auto-registry.js";
@@ -45,6 +46,10 @@ export const cache = (config?: any): MiddlewareSpec => ({ name: "cache", args: c
 export const run = (fn?: any): MiddlewareSpec => ({ name: "run", args: fn, stage: "isomorphic" });
 export const rateLimit = (config: any): MiddlewareSpec => ({ name: "rateLimit", args: config, stage: "isomorphic" });
 export const debug = (config?: any): MiddlewareSpec => ({ name: "debug", args: config, stage: "isomorphic" });
+export const throttle = (wait: number, options?: any): MiddlewareSpec => ({ name: "throttle", args: { wait, ...(options || {}) }, stage: "isomorphic" });
+export const debounce = (wait: number): MiddlewareSpec => ({ name: "debounce", args: wait, stage: "isomorphic" });
+export const retryable = (retries: number): MiddlewareSpec => ({ name: "retryable", args: retries, stage: "isomorphic" });
+export const cacheable = (config: any): MiddlewareSpec => ({ name: "cacheable", args: config, stage: "isomorphic" });
 
 // ======= MIDDLEWARES HÍBRIDOS HTTP =======
 
