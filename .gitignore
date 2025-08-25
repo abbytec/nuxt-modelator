@@ -1,2 +1,4 @@
 node_modules
-distnuxt-modelator/
+dist
+nuxt-modelator/
+nuxt-modelator-example/

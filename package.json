@@ -1,0 +1,16 @@
+{
+	"name": "modelator-monorepo",
+	"private": true,
+	"version": "0.0.0",
+	"workspaces": [
+		"nuxt-modelator/*",
+		"nuxt-modelator-example/*"
+	],
+	"scripts": {
+		"dev": "pnpm -F nuxt-modelator-example dev",
+		"build": "pnpm -r build"
+	},
+	"devDependencies": {
+		"typescript": "^5.5.4"
+	}
+}
