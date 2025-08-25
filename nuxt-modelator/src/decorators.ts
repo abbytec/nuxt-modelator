@@ -5,6 +5,7 @@ import { registerModel } from "./registry.js";
 // Auto-import de todos los decoradores para asegurar que se registren
 import "./decorators/transformers/string-transformers.js";
 import "./decorators/validators/index.js";
+import "./decorators/mongodb/index.js";
 
 // Solo mantener la nueva sintaxis separada
 export function Model(config: ModelGlobalConfig, methods: ModelApiMethods): ClassDecorator {
@@ -23,6 +24,7 @@ export * from "./decorators/validators/generic-validators.js";
 export * from "./decorators/validators/string-validators.js";
 export * from "./decorators/validators/number-validators.js";
 export * from "./decorators/validators/date-validators.js";
+export * from "./decorators/mongodb/index.js";
 
 // Export del registry para uso avanzado
 export { decoratorRegistry } from "./decorators/decorator-registry.js";

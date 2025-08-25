@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { Model, Required, UUID, Email, NotEmpty, Trim, Slugify, PastDate, MaxLength, IsPositive, Length } from "nuxt-modelator/dist/decorators";
+import { Model, Required, Email, NotEmpty, Trim, Slugify, PastDate, MaxLength, IsPositive, Length, Id, Unique } from "nuxt-modelator/dist/decorators";
 import {
 	timed,
 	dbConnect,
@@ -303,9 +303,9 @@ export class Producto {
 	// ======= AUTO-GENERACIÓN DE SCHEMA MONGOOSE =======
 	// Los decorators se convierten automáticamente en configuración de schema
 
-	// 🆔 ID único (se mapea a _id en MongoDB)
-	@Required()
-	id?: string; // MongoDB generará automáticamente el ObjectId
+        // 🆔 ID único (se mapea a _id en MongoDB)
+        @Id()
+        id?: string; // MongoDB generará automáticamente el ObjectId
 
 	// 📛 Nombre del producto
 	@Required({ message: "El nombre del producto es obligatorio" })
@@ -315,10 +315,11 @@ export class Producto {
 	name: string = ""; // String, required, trimmed, max 255 chars
 
 	// 🔗 Slug para URLs amigables
-	@Trim()
-	@Slugify()
-	@MaxLength(300)
-	slug?: string; // String, auto-slugified, indexed uniquely
+        @Trim()
+        @Slugify()
+        @Unique()
+        @MaxLength(300)
+        slug?: string; // String, auto-slugified, indexed uniquely
 
 	// 📝 Descripción del producto
 	@Trim()
