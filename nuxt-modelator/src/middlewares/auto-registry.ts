@@ -1,5 +1,10 @@
 import type { ClientMiddlewareFactory, ServerMiddlewareFactory, HybridMiddlewareFactory } from "../types.js";
-import { registerClientMiddleware as regClientMw, registerServerMiddleware as regServerMw, clientRegistry, serverRegistry } from "./registry.js";
+import {
+        registerClientMiddleware as regClientMw,
+        registerServerMiddleware as regServerMw,
+        clientRegistry,
+        serverRegistry,
+} from "./registry.js";
 
 // Registry para middlewares híbridos (único de auto-registry)
 const hybridRegistry: Record<string, HybridMiddlewareFactory> = {};
@@ -123,11 +128,30 @@ export const hybridMiddlewares = hybridRegistry;
 
 // Función para obtener todos los middlewares registrados (útil para debugging)
 export function getAllRegisteredMiddlewares() {
-	return {
-		client: Object.keys(clientRegistry),
-		server: Object.keys(serverRegistry),
-		hybrid: Object.keys(hybridRegistry),
-	};
+        return {
+                client: Object.keys(clientRegistry),
+                server: Object.keys(serverRegistry),
+                hybrid: Object.keys(hybridRegistry),
+        };
+}
+// ======= CARGA PEREZOSA DE MIDDLEWARES BUILT-IN =======
+// Cargamos y registramos los middlewares incluidos la primera vez que se
+// solicita. Esto evita problemas de dependencias circulares y asegura su
+// disponibilidad en tiempo de ejecución.
+let builtinsLoaded: Promise<void> | null = null;
+
+export async function ensureBuiltInMiddlewares(): Promise<void> {
+        if (!builtinsLoaded) {
+                builtinsLoaded = Promise.all([
+                        import("./server/auth-middlewares.js"),
+                        import("./server/db-middlewares.js"),
+                        import("./server/mongo-middlewares.js"),
+                        import("./client/data-middlewares.js"),
+                        import("./hybrid/validation-middlewares.js"),
+                        import("./hybrid/http-middlewares.js"),
+                ]).then(() => void 0);
+        }
+        await builtinsLoaded;
 }
 
 // Los middlewares se registrarán automáticamente cuando se importen sus respectivos archivos

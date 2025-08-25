@@ -7,7 +7,12 @@ import type {
 	HybridMiddleware,
 	NextFunction,
 } from "../types.js";
-import { clientMiddlewares, serverMiddlewares, hybridMiddlewares } from "./auto-registry.js";
+import {
+        clientMiddlewares,
+        serverMiddlewares,
+        hybridMiddlewares,
+        ensureBuiltInMiddlewares,
+} from "./auto-registry.js";
 
 // ======= INTERFACES PARA CONTEXTO UNIFICADO =======
 
@@ -59,10 +64,13 @@ async function buildMiddlewareChain(specs: EnhancedMiddlewareSpec[], context: Un
 // ======= RESOLUCIÓN DE MIDDLEWARES =======
 
 async function resolveMiddlewares(
-	specs: EnhancedMiddlewareSpec[],
-	context: UnifiedContext
+        specs: EnhancedMiddlewareSpec[],
+        context: UnifiedContext
 ): Promise<Array<(ctx: UnifiedContext, next: NextFunction) => Promise<void>>> {
-	const resolvedMiddlewares: Array<(ctx: UnifiedContext, next: NextFunction) => Promise<void>> = [];
+        // Ensure built-in middlewares are registered before resolving
+        await ensureBuiltInMiddlewares();
+
+        const resolvedMiddlewares: Array<(ctx: UnifiedContext, next: NextFunction) => Promise<void>> = [];
 
 	for (const spec of specs) {
 		if (typeof spec === "string") {
