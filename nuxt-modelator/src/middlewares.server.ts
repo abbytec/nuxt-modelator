@@ -1,6 +1,10 @@
 // ======= SERVIDOR: MIDDLEWARES Y RESOLVERS =======
 // Este archivo mantiene compatibilidad con el runtime
 // Los middlewares están disponibles desde middlewares/index.js
+// Aseguramos la auto-registración de los middlewares al importar este
+// archivo, incluso cuando Nuxt resuelva a la versión `.server` y haga
+// tree-shaking de los re-exports.
+import "./middlewares/index.js";
 
 import type { H3Event } from "h3";
 
