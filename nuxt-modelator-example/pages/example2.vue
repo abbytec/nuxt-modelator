@@ -4,15 +4,9 @@ import { usePlaceholderPostStore } from '#nuxt-modelator/stores/usePlaceholderPo
 
 const store = usePlaceholderPostStore()
 const posts = ref<any[]>([])
-const apiError = ref('')
 
 onMounted(async () => {
   posts.value = await store.getAll()
-  try {
-    await $fetch('/api/placeholderPosts')
-  } catch (err: any) {
-    apiError.value = String(err?.statusCode || err?.message || err)
-  }
 })
 </script>
 
@@ -26,6 +20,6 @@ onMounted(async () => {
     </ul>
     <p v-else>Cargando...</p>
 
-    <p class="text-red-600">/api/placeholderPosts: {{ apiError }}</p>
+    <p class="text-sm text-gray-500">No server endpoint is generated for <code>/api/placeholderPosts</code>.</p>
   </div>
 </template>
