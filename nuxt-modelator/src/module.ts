@@ -128,13 +128,25 @@ export default modulePortable;
 
 // ---- helpers ----
 function hasServerSpecs(opSpecs: any[]): boolean {
-	return (Array.isArray(opSpecs) ? opSpecs : []).some((s) => {
-		if (typeof s === "string") return true; // Middlewares tipo string son por defecto "server"
-		if (!s) return false;
-		const stage = s.stage ?? "server";
-		// Considerar válidos: "server" e "isomorphic" (híbridos que se ejecutan en servidor también)
-		return stage === "server" || stage === "isomorphic";
-	});
+        const specs = Array.isArray(opSpecs) ? opSpecs : [];
+
+        // Si algún middleware de request se ejecuta solo en cliente (url externa), no generar endpoint
+        const hasClientRequest = specs.some(
+                (s) =>
+                        typeof s === "object" &&
+                        s?.stage === "client" &&
+                        typeof s.name === "string" &&
+                        s.name.endsWith("Request")
+        );
+        if (hasClientRequest) return false;
+
+        return specs.some((s) => {
+                if (typeof s === "string") return true; // Middlewares tipo string son por defecto "server"
+                if (!s) return false;
+                const stage = s.stage ?? "server";
+                // Considerar válidos: "server" e "isomorphic" (híbridos que se ejecutan en servidor también)
+                return stage === "server" || stage === "isomorphic";
+        });
 }
 
 function addRoute(route: string, method: "get" | "post" | "put" | "delete", resolve: any) {

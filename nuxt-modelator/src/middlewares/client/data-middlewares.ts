@@ -133,49 +133,69 @@ export function createLogRequestMiddleware(config?: {
 
 // ======= MIDDLEWARE DE HTTP REQUESTS =======
 
-export function createPostRequestMiddleware(config?: { headers?: Record<string, string>; method?: string; baseUrl?: string }): ClientMiddleware {
-	return async (ctx, next) => {
-		// Ejecutar middlewares anteriores primero (para validación, etc.)
-		await next();
+export function createPostRequestMiddleware(config?: {
+        url?: string | ((ctx: any) => string);
+        headers?: Record<string, string> | ((ctx: any) => Record<string, string>);
+        method?: string;
+        baseUrl?: string;
+        bodyMapper?: (data: any, ctx: any) => any | Promise<any>;
+}): ClientMiddleware {
+        return async (ctx, next) => {
+                // Ejecutar middlewares anteriores primero (para validación, etc.)
+                await next();
 
-		try {
-			const basePath: string = ctx.state.__basePath || "/api";
-			const method = (config?.method || (ctx.op === "create" ? "POST" : "GET")).toUpperCase();
-			const plural: string = ctx.state.__plural || `${ctx.model}s`;
-			const url = method === "POST" ? `${basePath}/${plural}` : `${basePath}/${ctx.model}`;
+                try {
+                        const method = (config?.method || (ctx.op === "create" ? "POST" : "GET")).toUpperCase();
+                        const plural: string = ctx.state.__plural || `${ctx.model}s`;
+                        const basePath: string = ctx.state.__basePath || config?.baseUrl || "/api";
+                        const url = config?.url
+                                ? typeof config.url === "function"
+                                        ? config.url(ctx)
+                                        : config.url
+                                : method === "POST"
+                                ? `${basePath}/${plural}`
+                                : `${basePath}/${ctx.model}`;
 
-			// Preferir validatedData del state, luego ctx.args.data, luego ctx.args
-			const body = method === "POST" ? ctx.state.validatedData ?? ctx.args?.data ?? ctx.args : undefined;
+                        const rawData = ctx.state.validatedData ?? ctx.args?.data ?? ctx.args;
+                        const body =
+                                method === "GET" || method === "DELETE"
+                                        ? undefined
+                                        : config?.bodyMapper
+                                        ? await config.bodyMapper(rawData, ctx)
+                                        : rawData;
 
-			console.debug(`[client-http] postRequest - [${method}]: ${url}`, body);
+                        const params = method === "GET" || method === "DELETE" ? (ctx.args || {}) : undefined;
 
-			const $fetch = (await import("ofetch")).$fetch;
-			const res = await $fetch(url, {
-				method,
-				body,
-				headers: {
-					...(config?.headers || {}),
-					"x-demo-auth": "true",
-				},
-			});
+                        let headers = typeof config?.headers === "function" ? config.headers(ctx) : { ...(config?.headers || {}) };
+                        if (!config?.url) {
+                                headers = { "x-demo-auth": "true", ...headers };
+                        }
 
-			console.debug("[client-http] postRequest - response:", res);
+                        console.debug(`[client-http] postRequest - [${method}]: ${url}`, body ?? params);
 
-			// Normalizar respuesta
-			const normalized =
-				res && typeof res === "object" && Object.keys(res).length === 1 && res.ok === true
-					? ctx.state.validatedData ?? body ?? res
-					: res;
+                        const $fetch = (await import("ofetch")).$fetch;
+                        const res = await $fetch(url, {
+                                method,
+                                body,
+                                params,
+                                headers,
+                        });
 
-			// Almacenar resultado para próximos middlewares
-			ctx.args.data = normalized;
-			ctx.state.httpResponse = res;
-			ctx.state.httpNormalizedData = normalized;
-		} catch (e) {
-			console.warn("[client-http] postRequest error", e);
-			throw e;
-		}
-	};
+                        console.debug("[client-http] postRequest - response:", res);
+
+                        const normalized =
+                                res && typeof res === "object" && Object.keys(res).length === 1 && (res as any).ok === true
+                                        ? ctx.state.validatedData ?? body ?? res
+                                        : res;
+
+                        ctx.args.data = normalized;
+                        ctx.state.httpResponse = res;
+                        ctx.state.httpNormalizedData = normalized;
+                } catch (e) {
+                        console.warn("[client-http] postRequest error", e);
+                        throw e;
+                }
+        };
 }
 
 export function createCacheMiddleware(config?: {
