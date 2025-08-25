@@ -132,71 +132,83 @@ export function createLogRequestMiddleware(config?: {
 }
 
 // ======= MIDDLEWARE DE HTTP REQUESTS =======
+function buildRequestMiddleware(defaultMethod: string, usePlural: boolean) {
+        return function (config?: {
+                url?: string | ((ctx: any) => string);
+                headers?: Record<string, string> | ((ctx: any) => Record<string, string>);
+                method?: string;
+                baseUrl?: string;
+                bodyMapper?: (data: any, ctx: any) => any | Promise<any>;
+        }): ClientMiddleware {
+                return async (ctx, next) => {
+                        // Ejecutar middlewares anteriores primero (para validación, etc.)
+                        await next();
 
-export function createPostRequestMiddleware(config?: {
-        url?: string | ((ctx: any) => string);
-        headers?: Record<string, string> | ((ctx: any) => Record<string, string>);
-        method?: string;
-        baseUrl?: string;
-        bodyMapper?: (data: any, ctx: any) => any | Promise<any>;
-}): ClientMiddleware {
-        return async (ctx, next) => {
-                // Ejecutar middlewares anteriores primero (para validación, etc.)
-                await next();
+                        try {
+                                const name = `${(config?.method || defaultMethod).toLowerCase()}${usePlural ? "All" : ""}Request`;
+                                const method = (config?.method || defaultMethod).toUpperCase();
+                                const plural: string = ctx.state.__plural || `${ctx.model}s`;
+                                const basePath: string = ctx.state.__basePath || config?.baseUrl || "/api";
+                                const url = config?.url
+                                        ? typeof config.url === "function"
+                                                ? config.url(ctx)
+                                                : config.url
+                                        : `${basePath}/${usePlural ? plural : ctx.model}`;
 
-                try {
-                        const method = (config?.method || (ctx.op === "create" ? "POST" : "GET")).toUpperCase();
-                        const plural: string = ctx.state.__plural || `${ctx.model}s`;
-                        const basePath: string = ctx.state.__basePath || config?.baseUrl || "/api";
-                        const url = config?.url
-                                ? typeof config.url === "function"
-                                        ? config.url(ctx)
-                                        : config.url
-                                : method === "POST"
-                                ? `${basePath}/${plural}`
-                                : `${basePath}/${ctx.model}`;
+                                const rawData = ctx.state.validatedData ?? ctx.args?.data ?? ctx.args;
+                                const body =
+                                        method === "GET" || method === "DELETE"
+                                                ? undefined
+                                                : config?.bodyMapper
+                                                ? await config.bodyMapper(rawData, ctx)
+                                                : rawData;
 
-                        const rawData = ctx.state.validatedData ?? ctx.args?.data ?? ctx.args;
-                        const body =
-                                method === "GET" || method === "DELETE"
-                                        ? undefined
-                                        : config?.bodyMapper
-                                        ? await config.bodyMapper(rawData, ctx)
-                                        : rawData;
+                                const params = method === "GET" || method === "DELETE" ? (ctx.args || {}) : undefined;
 
-                        const params = method === "GET" || method === "DELETE" ? (ctx.args || {}) : undefined;
+                                let headers =
+                                        typeof config?.headers === "function" ? config.headers(ctx) : { ...(config?.headers || {}) };
+                                if (!config?.url) {
+                                        headers = { "x-demo-auth": "true", ...headers };
+                                }
 
-                        let headers = typeof config?.headers === "function" ? config.headers(ctx) : { ...(config?.headers || {}) };
-                        if (!config?.url) {
-                                headers = { "x-demo-auth": "true", ...headers };
+                                console.debug(`[client-${name}] [${method}]: ${url}`, body ?? params);
+
+                                const $fetch = (await import("ofetch")).$fetch;
+                                const res = await $fetch(url, {
+                                        method,
+                                        body,
+                                        params,
+                                        headers,
+                                });
+
+                                console.debug(`[client-${name}] response:`, res);
+
+                                const normalized =
+                                        res && typeof res === "object" && Object.keys(res).length === 1 && (res as any).ok === true
+                                                ? ctx.state.validatedData ?? body ?? res
+                                                : res;
+
+                                if (!ctx.args || typeof ctx.args !== "object") ctx.args = {} as any;
+                                (ctx.args as any).data = normalized;
+                                ctx.state.httpResponse = res;
+                                ctx.state.httpNormalizedData = normalized;
+                        } catch (e) {
+                                const name = `${(config?.method || defaultMethod).toLowerCase()}${usePlural ? "All" : ""}Request`;
+                                console.warn(`[client-${name}] error`, e);
+                                throw e;
                         }
-
-                        console.debug(`[client-http] postRequest - [${method}]: ${url}`, body ?? params);
-
-                        const $fetch = (await import("ofetch")).$fetch;
-                        const res = await $fetch(url, {
-                                method,
-                                body,
-                                params,
-                                headers,
-                        });
-
-                        console.debug("[client-http] postRequest - response:", res);
-
-                        const normalized =
-                                res && typeof res === "object" && Object.keys(res).length === 1 && (res as any).ok === true
-                                        ? ctx.state.validatedData ?? body ?? res
-                                        : res;
-
-                        ctx.args.data = normalized;
-                        ctx.state.httpResponse = res;
-                        ctx.state.httpNormalizedData = normalized;
-                } catch (e) {
-                        console.warn("[client-http] postRequest error", e);
-                        throw e;
-                }
+                };
         };
 }
+
+export const createPostRequestMiddleware = buildRequestMiddleware("POST", false);
+export const createPostAllRequestMiddleware = buildRequestMiddleware("POST", true);
+export const createGetRequestMiddleware = buildRequestMiddleware("GET", false);
+export const createGetAllRequestMiddleware = buildRequestMiddleware("GET", true);
+export const createPutRequestMiddleware = buildRequestMiddleware("PUT", false);
+export const createPutAllRequestMiddleware = buildRequestMiddleware("PUT", true);
+export const createDeleteRequestMiddleware = buildRequestMiddleware("DELETE", false);
+export const createDeleteAllRequestMiddleware = buildRequestMiddleware("DELETE", true);
 
 export function createCacheMiddleware(config?: {
 	ttl?: number; // Time to live en ms
@@ -265,15 +277,22 @@ export function createCacheMiddleware(config?: {
 
 // ======= AUTO-REGISTRO =======
 autoRegisterFromModule(
-	{
-		createSaveOnStoreMiddleware,
-		createPopulateArrayMiddleware,
-		createGetFromPluralFilteredMiddleware,
-		createAddToPluralMiddleware,
-		createLogRequestMiddleware,
-		createPostRequestMiddleware,
-		createCacheMiddleware,
-	},
+        {
+                createSaveOnStoreMiddleware,
+                createPopulateArrayMiddleware,
+                createGetFromPluralFilteredMiddleware,
+                createAddToPluralMiddleware,
+                createLogRequestMiddleware,
+                createPostRequestMiddleware,
+                createPostAllRequestMiddleware,
+                createGetRequestMiddleware,
+                createGetAllRequestMiddleware,
+                createPutRequestMiddleware,
+                createPutAllRequestMiddleware,
+                createDeleteRequestMiddleware,
+                createDeleteAllRequestMiddleware,
+                createCacheMiddleware,
+        },
 	"client",
 	"data-middlewares"
 );
