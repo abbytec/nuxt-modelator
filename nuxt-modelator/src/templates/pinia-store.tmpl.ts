@@ -175,7 +175,7 @@ export const use${capitalize(args.model)}Store = defineStore('modelator:${args.m
       const { transformedData, isValid, errors } = await this.processFields(unwrapped);
       if (!isValid) { this.validationErrors[op] = errors; this.loading[op] = false; return null; }
       
-      // Setear validatedData para que postRequest lo use
+      // Setear validatedData para que las request middlewares la utilicen
       (this as any).validatedData = transformedData;
       
       try {
