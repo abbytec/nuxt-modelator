@@ -1,0 +1,23 @@
+{
+	"name": "nuxt-modelator-example",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "nuxt dev",
+		"build": "nuxt build",
+		"start": "nuxt start"
+	},
+	"dependencies": {
+		"@nuxtjs/tailwindcss": "^6.11.4",
+		"@pinia/nuxt": "^0.5.1",
+		"build": "^0.1.4",
+		"mongoose": "^8.1.1",
+		"nuxt": "^3.12.0",
+		"nuxt-modelator": "file:../nuxt-modelator",
+		"pinia": "^2.2.4",
+		"reflect-metadata": "^0.1.13"
+	},
+	"devDependencies": {
+		"typescript": "^5.5.4"
+	}
+}
