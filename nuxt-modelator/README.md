@@ -1,16 +1,18 @@
 # nuxt-modelator
 
-`nuxt-modelator` es un módulo para Nuxt 3 que genera endpoints, tiendas de Pinia y ejecutores de middlewares a partir de modelos definidos con decoradores.
+[Leer en español](README.es.md)
 
-## Instalación
+`nuxt-modelator` is a Nuxt 3 module that generates endpoints, Pinia stores, and middleware runners from models defined with decorators.
+
+## Installation
 
 ```bash
 npm install nuxt-modelator
-# o
+# or
 pnpm add nuxt-modelator
 ```
 
-En `nuxt.config.ts`:
+In `nuxt.config.ts`:
 
 ```ts
 export default defineNuxtConfig({
@@ -22,34 +24,34 @@ export default defineNuxtConfig({
 });
 ```
 
-## Qué resuelve
+## What it solves
 
-- Centraliza la definición del dominio mediante modelos.
-- Genera automáticamente endpoints REST y tiendas de estado.
-- Permite componer middlewares reutilizables tanto en cliente como en servidor.
+- Centralizes domain definition through models.
+- Automatically generates REST endpoints and state stores.
+- Lets you compose reusable middlewares for client and server.
 
-## Parte técnica
+## Technical reference
 
-### Validadores
+### Validators
 
-#### Generales
-- `@Required()` – obliga a que exista un valor.
-- `@MaxLength(max)` / `@MinLength(min)` / `@Length({min,max})` – control de longitud.
-- `@NotEmpty()` – cadenas o arreglos no vacíos.
+#### General
+- `@Required()` – requires a value.
+- `@MaxLength(max)` / `@MinLength(min)` / `@Length({ min, max })` – control string or array length.
+- `@NotEmpty()` – ensures string or array is not empty.
 
-#### Cadenas
-- `@Email()` – valida formato de correo.
-- `@Pattern(/regex/)` – coincide con expresión regular.
+#### Strings
+- `@Email()` – checks email format.
+- `@Pattern(/regex/)` – matches a regular expression.
 - `@UUID()`, `@Url()`, `@NumericString()`, `@DateISO()`.
 
-#### Números
-- `@Max(valor)` / `@Min(valor)` / `@Range({min,max})`.
+#### Numbers
+- `@Max(value)` / `@Min(value)` / `@Range({ min, max })`.
 - `@IsPositive()` / `@IsNegative()`.
 
-#### Fechas
+#### Dates
 - `@PastDate()` / `@FutureDate()` / `@Today()`.
 
-**Ejemplo:**
+**Example:**
 
 ```ts
 import { Email, Required, MaxLength, ToLowerCase } from 'nuxt-modelator/dist/decorators';
@@ -63,70 +65,70 @@ class User {
 }
 ```
 
-### Transformadores
+### Transformers
 
-Todos operan sobre cadenas:
+All operate on strings:
 - `@ToLowerCase()`, `@ToUpperCase()`, `@Trim()`, `@Capitalize()`.
 - `@Slugify()`, `@Base64()`, `@UrlEncode()`.
 - `@SanitizeHtml()`, `@EscapeHtml()`.
 
 ### Middlewares
 
-Los middlewares se describen con helpers que devuelven un `MiddlewareSpec` y pueden encadenarse para crear flujos complejos. A continuación se listan los principales agrupados por entorno.
+Middlewares are described with helpers that return a `MiddlewareSpec` and can be chained to build complex flows. Below are the main ones grouped by environment.
 
-#### Servidor
+#### Server
 - `isAuth()`
-  - Falla con 401 si no existe una sesión válida en `event.context`.
+  - Throws 401 if `event.context` lacks a valid session.
 - `sessionHasProperty({ roles?, permissions? })`
-  - Autoriza según los roles o permisos presentes en la sesión.
+  - Authorizes based on roles or permissions present in the session.
 - `timed({ label?, threshold?, logResults? })`
-  - Mide la duración de la operación. `threshold` permite registrar solo cuando se supera cierto tiempo.
+  - Measures execution time. `threshold` controls when to log.
 - `dbConnect({ connectionString?, dbConfig? })`
-  - Abre la conexión a la base de datos indicada en el modelo; puede sobreescribirse.
+  - Opens the database connection defined on the model; can be overridden.
 - `transaction({ isolationLevel? })`
-  - Envuelve el bloque siguiente en una transacción.
+  - Wraps the following block in a transaction.
 - Mongo helpers:
-  - `mongoQuery({ operation, filter, options })` – ejecuta operaciones `find`, `findOne`, `aggregate`, etc.
-  - `mongoSave({ document })`, `mongoUpdate({ filter, update, options })`, `mongoDelete({ filter })` – operaciones CRUD.
-  - `mongoSaveOrUpdate()` decide entre guardar o actualizar según exista `_id`.
-  - `mongoInfo()` añade datos de la conexión al contexto.
+  - `mongoQuery({ operation, filter, options })` – run `find`, `findOne`, `aggregate`, etc.
+  - `mongoSave({ document })`, `mongoUpdate({ filter, update, options })`, `mongoDelete({ filter })` – CRUD operations.
+  - `mongoSaveOrUpdate()` chooses between save or update depending on `_id`.
+  - `mongoInfo()` adds connection metadata to the context.
 
-#### Cliente
+#### Client
 - `saveOnStore({ to = 'single', position = 'push' })`
-  - Persiste el resultado en la tienda de Pinia especificada.
+  - Persists the result in the specified Pinia store.
 - `populateArray({ from = 'data' })`
-  - Sobrescribe un arreglo del estado con el contenido recibido.
+  - Replaces an array in state with received data.
 - `getFromPluralFiltered(filter)`
-  - Obtiene elementos de la colección `plural` aplicando un filtro.
+  - Retrieves items from the `plural` collection applying a filter.
 - `addToPlural({ position = 'push', to = 'plural' })`
-  - Inserta el elemento devuelto en la colección local.
-- Peticiones HTTP: `postRequest`, `postAllRequest`, `getRequest`, `getAllRequest`, `putRequest`, `putAllRequest`, `deleteRequest`, `deleteAllRequest`
-  - Aceptan `{ url, headers, method, baseUrl, bodyMapper, middlewares }`; los `middlewares` internos se ejecutan en el servidor.
+  - Inserts the returned item into the local collection.
+- HTTP requests: `postRequest`, `postAllRequest`, `getRequest`, `getAllRequest`, `putRequest`, `putAllRequest`, `deleteRequest`, `deleteAllRequest`
+  - Accept `{ url, headers, method, baseUrl, bodyMapper, middlewares }`; the inner `middlewares` run on the server.
 - `cache({ ttl = 0, key?, storage? })`
-  - Cachea respuestas en memoria, `localStorage` o `sessionStorage`.
+  - Caches responses in memory, `localStorage`, or `sessionStorage`.
 
-#### Híbridos
-Se ejecutan tanto en cliente como en servidor.
+#### Hybrid
+Run on both client and server.
 - `rateLimit({ maxRequests, windowMs, keyGenerator?, skipSuccessful? })`
-  - Limita la cantidad de llamadas permitidas en un período.
+  - Limits the number of allowed calls in a period.
 - `debug({ logState?, logArgs?, logTiming?, prefix? })`
-  - Imprime información útil para depuración.
+  - Logs helpful debugging information.
 - `run(fn, { after = false })`
-  - Ejecuta una función antes o después de la cadena de middlewares.
+  - Executes a function before or after the middleware chain.
 - `catch(fn)`
-  - Permite manejar errores de la cadena.
-- `throttle(wait, { defaultValue? })` y `debounce(wait)`
-  - Controlan la frecuencia de ejecución.
+  - Handles chain errors.
+- `throttle(wait, { defaultValue? })` and `debounce(wait)`
+  - Control execution frequency.
 - `retryable(retries)`
-  - Reintenta la operación la cantidad indicada.
+  - Retries the operation the given number of times.
 - `cacheable({ ttl, middlewares? })`
-  - Almacena el resultado en caché mientras ejecuta middlewares internos opcionales.
+  - Stores the result in cache while optionally running inner middlewares.
 - `circuitBreaker({ failureThreshold, successThreshold, timeout, resetTimeout, fallback? })`
-  - Abre o cierra el circuito según la tasa de fallos.
+  - Opens or closes the circuit based on failure rate.
 - `logRequest({ logLevel = 'info', includeArgs = false, includeState = false })`
-  - Registra en consola las peticiones y su contexto.
+  - Logs request and its context.
 
-#### Ejemplo con modelos
+#### Model-based example
 
 ```ts
 // nuxt-modelator-example/domain/models/PlaceholderPost.ts
@@ -164,13 +166,12 @@ export class PlaceholderPost {
 }
 ```
 
-Este archivo vive en `nuxt-modelator-example/domain/models`, la ruta que debe configurarse en `modelsDir` para que el módulo cargue automáticamente los modelos.
+This file lives in `nuxt-modelator-example/domain/models`, the path that should be set in `modelsDir` so the module loads models automatically.
 
-## Ejemplo
+## Example
 
-El repositorio incluye `nuxt-modelator-example` que muestra un uso completo del módulo.
+The repository contains `nuxt-modelator-example` that showcases full module usage.
 
-## Licencia
+## License
 
 MIT
-
