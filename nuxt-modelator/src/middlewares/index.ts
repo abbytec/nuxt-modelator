@@ -66,20 +66,24 @@ export const logRequest = (config?: {
  * ```
  */
 type HttpRequestConfig = {
+        url?: string | ((ctx: any) => string);
         headers?: Record<string, string>;
         method?: string;
         baseUrl?: string;
         middlewares?: MiddlewareSpec[]; // Middlewares que solo se ejecutan en servidor
+        bodyMapper?: (data: any, ctx?: any) => any;
 };
 
-export const postRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "postRequest", args: config, stage: "isomorphic" });
-export const postAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "postAllRequest", args: config, stage: "isomorphic" });
-export const getRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "getRequest", args: config, stage: "isomorphic" });
-export const getAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "getAllRequest", args: config, stage: "isomorphic" });
-export const putRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "putRequest", args: config, stage: "isomorphic" });
-export const putAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "putAllRequest", args: config, stage: "isomorphic" });
-export const deleteRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "deleteRequest", args: config, stage: "isomorphic" });
-export const deleteAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "deleteAllRequest", args: config, stage: "isomorphic" });
+const reqStage = (config?: HttpRequestConfig) => (config?.url ? "client" : "isomorphic");
+
+export const postRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "postRequest", args: config, stage: reqStage(config) });
+export const postAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "postAllRequest", args: config, stage: reqStage(config) });
+export const getRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "getRequest", args: config, stage: reqStage(config) });
+export const getAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "getAllRequest", args: config, stage: reqStage(config) });
+export const putRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "putRequest", args: config, stage: reqStage(config) });
+export const putAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "putAllRequest", args: config, stage: reqStage(config) });
+export const deleteRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "deleteRequest", args: config, stage: reqStage(config) });
+export const deleteAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "deleteAllRequest", args: config, stage: reqStage(config) });
 
 // ======= HELPER PARA COMPOSICIÓN FÁCIL =======
 

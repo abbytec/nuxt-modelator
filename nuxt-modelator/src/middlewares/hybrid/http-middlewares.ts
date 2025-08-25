@@ -4,10 +4,12 @@ import { autoRegisterFromModule } from "../auto-registry.js";
 // ======= FACTORÍA GENÉRICA PARA REQUESTS HÍBRIDOS =======
 function buildRequestMiddleware(defaultMethod: string, usePlural: boolean) {
         return function (config?: {
-                headers?: Record<string, string>;
+                url?: string | ((ctx: any) => string);
+                headers?: Record<string, string> | ((ctx: any) => Record<string, string>);
                 method?: string;
                 baseUrl?: string;
                 middlewares?: any[]; // Middlewares que solo se ejecutan en servidor
+                bodyMapper?: (data: any, ctx: any) => any | Promise<any>;
         }): HybridMiddleware {
                 return async (ctx, next) => {
                         const name = `${(config?.method || defaultMethod).toLowerCase()}${usePlural ? "All" : ""}Request`;
@@ -25,21 +27,34 @@ function buildRequestMiddleware(defaultMethod: string, usePlural: boolean) {
                                 await next();
 
                                 try {
-                                        const basePath: string = ctx.state.__basePath || "/api";
                                         const method = (config?.method || defaultMethod).toUpperCase();
                                         const plural: string = ctx.state.__plural || `${ctx.model}s`;
-                                        const url = `${basePath}/${usePlural ? plural : ctx.model}`;
+                                        const basePath: string = ctx.state.__basePath || config?.baseUrl || "/api";
 
+                                        const url = config?.url
+                                                ? typeof config.url === "function"
+                                                        ? config.url(ctx)
+                                                        : config.url
+                                                : `${basePath}/${usePlural ? plural : ctx.model}`;
+
+                                        const rawData = ctx.state.validatedData ?? ctx.args?.data ?? ctx.args;
                                         const body =
                                                 method === "GET" || method === "DELETE"
                                                         ? undefined
-                                                        : ctx.state.validatedData ?? ctx.args?.data ?? ctx.args;
+                                                        : config?.bodyMapper
+                                                        ? await config.bodyMapper(rawData, ctx)
+                                                        : rawData;
 
                                         const standardOps = new Set(["get", "getAll", "create", "createAll", "update", "updateAll", "delete", "deleteAll", "getByName"]);
                                         const includeParams = method === "GET" || method === "DELETE" || !standardOps.has(ctx.op);
                                         const params = includeParams
                                                 ? { ...(ctx.args || {}), ...(standardOps.has(ctx.op) ? {} : { __op: ctx.op }) }
                                                 : undefined;
+
+                                        let headers = typeof config?.headers === "function" ? config.headers(ctx) : { ...(config?.headers || {}) };
+                                        if (!config?.url) {
+                                                headers = { "x-demo-auth": "true", ...headers };
+                                        }
 
                                         console.debug(`[client-${name}] [${method}]: ${url}`, body ?? params);
 
@@ -48,10 +63,7 @@ function buildRequestMiddleware(defaultMethod: string, usePlural: boolean) {
                                                 method,
                                                 body,
                                                 params,
-                                                headers: {
-                                                        ...(config?.headers || {}),
-                                                        "x-demo-auth": "true",
-                                                },
+                                                headers,
                                         });
 
                                         console.debug(`[client-${name}] response:`, res);
