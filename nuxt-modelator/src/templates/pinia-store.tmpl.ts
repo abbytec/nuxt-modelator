@@ -16,11 +16,16 @@ const isClient = typeof window !== 'undefined'
 const clientOps: Record<string, any[]> = Object.fromEntries(
   Object.entries((${JSON.stringify(args.modelMeta?.apiMethods || {})} as any)).map(([op, specs]: any) => [
     op,
-    (Array.isArray(specs) ? specs : []).filter((s: any) => {
-      if (typeof s === 'string') return false // String middlewares son server-only
-      const stage = s.stage ?? 'server'
-      // Incluir client e isomorphic (híbridos), excluir solo server
-      return stage === 'client' || stage === 'isomorphic'
+    (Array.isArray(specs) ? specs : []).map((s: any) => {
+      if (s && typeof s === 'object' && s.name === 'run' && s.args && typeof s.args.__fn === 'string') {
+        try {
+          const src = s.args.__fn as string
+          // eslint-disable-next-line no-new-func
+          const fn = new Function('return (' + src + ')')()
+          return { ...s, args: { ...s.args, fn } }
+        } catch {}
+      }
+      return s
     })
   ])
 )

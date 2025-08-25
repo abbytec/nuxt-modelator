@@ -97,12 +97,11 @@ export function createGetFromPluralFilteredMiddleware(filter: Record<string, any
 
 export function createAddToPluralMiddleware(config?: { position?: "push" | "unshift"; to?: "entity" | "all" | "both" }): ClientMiddleware {
 	return async (ctx, next) => {
-		// Ejecutar middlewares siguientes primero para obtener/procesar datos
+		// Ejecutar próximos middlewares primero para obtener los datos
 		await next();
 
-		const raw = ctx.args?.data ?? ctx.args ?? null;
-		const data = toPlain(raw);
-		console.debug(`[client-data] adding to ${ctx.state.__plural} - data:`, data);
+		const data = toPlain(ctx.args?.data ?? ctx.args ?? null);
+		if (!data) return;
 
 		if (!Array.isArray(ctx.state.all)) ctx.state.all = [];
 		if (config?.position === "unshift") ctx.state.all.unshift(data);
@@ -110,95 +109,69 @@ export function createAddToPluralMiddleware(config?: { position?: "push" | "unsh
 	};
 }
 
-export function createLogRequestMiddleware(config?: {
-	logLevel?: "debug" | "info" | "warn" | "error";
-	includeArgs?: boolean;
-}): ClientMiddleware {
-	return async (ctx, next) => {
-		const logLevel = config?.logLevel || "info";
-		const includeArgs = config?.includeArgs ?? true;
-
-		if (typeof console !== "undefined") {
-			const logData: any = { op: ctx.op, model: ctx.model };
-			if (includeArgs) {
-				logData.args = ctx.args;
-			}
-
-			console[logLevel](`[client-request] ${ctx.op} on ${ctx.model}`, logData);
-		}
-
-		await next();
-	};
-}
-
 // ======= MIDDLEWARE DE HTTP REQUESTS =======
 function buildRequestMiddleware(defaultMethod: string, usePlural: boolean) {
-        return function (config?: {
-                url?: string | ((ctx: any) => string);
-                headers?: Record<string, string> | ((ctx: any) => Record<string, string>);
-                method?: string;
-                baseUrl?: string;
-                bodyMapper?: (data: any, ctx: any) => any | Promise<any>;
-        }): ClientMiddleware {
-                return async (ctx, next) => {
-                        // Ejecutar middlewares anteriores primero (para validación, etc.)
-                        await next();
+	return function (config?: {
+		url?: string | ((ctx: any) => string);
+		headers?: Record<string, string> | ((ctx: any) => Record<string, string>);
+		method?: string;
+		baseUrl?: string;
+		bodyMapper?: (data: any, ctx: any) => any | Promise<any>;
+	}): ClientMiddleware {
+		return async (ctx, next) => {
+			// Ejecutar middlewares anteriores primero (para validación, etc.)
+			await next();
 
-                        try {
-                                const name = `${(config?.method || defaultMethod).toLowerCase()}${usePlural ? "All" : ""}Request`;
-                                const method = (config?.method || defaultMethod).toUpperCase();
-                                const plural: string = ctx.state.__plural || `${ctx.model}s`;
-                                const basePath: string = ctx.state.__basePath || config?.baseUrl || "/api";
-                                const url = config?.url
-                                        ? typeof config.url === "function"
-                                                ? config.url(ctx)
-                                                : config.url
-                                        : `${basePath}/${usePlural ? plural : ctx.model}`;
+			try {
+				const name = `${(config?.method || defaultMethod).toLowerCase()}${usePlural ? "All" : ""}Request`;
+				const method = (config?.method || defaultMethod).toUpperCase();
+				const plural: string = ctx.state.__plural || `${ctx.model}s`;
+				const basePath: string = ctx.state.__basePath || config?.baseUrl || "/api";
+				const url = config?.url
+					? typeof config.url === "function"
+						? config.url(ctx)
+						: config.url
+					: `${basePath}/${usePlural ? plural : ctx.model}`;
 
-                                const rawData = ctx.state.validatedData ?? ctx.args?.data ?? ctx.args;
-                                const body =
-                                        method === "GET" || method === "DELETE"
-                                                ? undefined
-                                                : config?.bodyMapper
-                                                ? await config.bodyMapper(rawData, ctx)
-                                                : rawData;
+				const rawData = ctx.state.validatedData ?? ctx.args?.data ?? ctx.args;
+				const body =
+					method === "GET" || method === "DELETE" ? undefined : config?.bodyMapper ? await config.bodyMapper(rawData, ctx) : rawData;
 
-                                const params = method === "GET" || method === "DELETE" ? (ctx.args || {}) : undefined;
+				const params = method === "GET" || method === "DELETE" ? ctx.args || {} : undefined;
 
-                                let headers =
-                                        typeof config?.headers === "function" ? config.headers(ctx) : { ...(config?.headers || {}) };
-                                if (!config?.url) {
-                                        headers = { "x-demo-auth": "true", ...headers };
-                                }
+				let headers = typeof config?.headers === "function" ? config.headers(ctx) : { ...(config?.headers || {}) };
+				if (!config?.url) {
+					headers = { "x-demo-auth": "true", ...headers };
+				}
 
-                                console.debug(`[client-${name}] [${method}]: ${url}`, body ?? params);
+				console.debug(`[client-${name}] [${method}]: ${url}`, body ?? params);
 
-                                const $fetch = (await import("ofetch")).$fetch;
-                                const res = await $fetch(url, {
-                                        method,
-                                        body,
-                                        params,
-                                        headers,
-                                });
+				const $fetch = (await import("ofetch")).$fetch;
+				const res = await $fetch(url, {
+					method,
+					body,
+					params,
+					headers,
+				});
 
-                                console.debug(`[client-${name}] response:`, res);
+				console.debug(`[client-${name}] response:`, res);
 
-                                const normalized =
-                                        res && typeof res === "object" && Object.keys(res).length === 1 && (res as any).ok === true
-                                                ? ctx.state.validatedData ?? body ?? res
-                                                : res;
+				const normalized =
+					res && typeof res === "object" && Object.keys(res).length === 1 && (res as any).ok === true
+						? ctx.state.validatedData ?? body ?? res
+						: res;
 
-                                if (!ctx.args || typeof ctx.args !== "object") ctx.args = {} as any;
-                                (ctx.args as any).data = normalized;
-                                ctx.state.httpResponse = res;
-                                ctx.state.httpNormalizedData = normalized;
-                        } catch (e) {
-                                const name = `${(config?.method || defaultMethod).toLowerCase()}${usePlural ? "All" : ""}Request`;
-                                console.warn(`[client-${name}] error`, e);
-                                throw e;
-                        }
-                };
-        };
+				if (!ctx.args || typeof ctx.args !== "object") ctx.args = {} as any;
+				(ctx.args as any).data = normalized;
+				ctx.state.httpResponse = res;
+				ctx.state.httpNormalizedData = normalized;
+			} catch (e) {
+				const name = `${(config?.method || defaultMethod).toLowerCase()}${usePlural ? "All" : ""}Request`;
+				console.warn(`[client-${name}] error`, e);
+				throw e;
+			}
+		};
+	};
 }
 
 export const createPostRequestMiddleware = buildRequestMiddleware("POST", false);
@@ -277,22 +250,21 @@ export function createCacheMiddleware(config?: {
 
 // ======= AUTO-REGISTRO =======
 autoRegisterFromModule(
-        {
-                createSaveOnStoreMiddleware,
-                createPopulateArrayMiddleware,
-                createGetFromPluralFilteredMiddleware,
-                createAddToPluralMiddleware,
-                createLogRequestMiddleware,
-                createPostRequestMiddleware,
-                createPostAllRequestMiddleware,
-                createGetRequestMiddleware,
-                createGetAllRequestMiddleware,
-                createPutRequestMiddleware,
-                createPutAllRequestMiddleware,
-                createDeleteRequestMiddleware,
-                createDeleteAllRequestMiddleware,
-                createCacheMiddleware,
-        },
+	{
+		createSaveOnStoreMiddleware,
+		createPopulateArrayMiddleware,
+		createGetFromPluralFilteredMiddleware,
+		createAddToPluralMiddleware,
+		createPostRequestMiddleware,
+		createPostAllRequestMiddleware,
+		createGetRequestMiddleware,
+		createGetAllRequestMiddleware,
+		createPutRequestMiddleware,
+		createPutAllRequestMiddleware,
+		createDeleteRequestMiddleware,
+		createDeleteAllRequestMiddleware,
+		createCacheMiddleware,
+	},
 	"client",
 	"data-middlewares"
 );

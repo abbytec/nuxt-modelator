@@ -40,8 +40,47 @@ export function pushPropTransform(target: any, prop: string, t: PropTransform) {
 }
 
 export function getManifest(): Manifest {
+	// Crear una copia serializable que preserve funciones como strings en __fn
+	const models = Array.from(REGISTRY.models.values()).map((m) => {
+		// Copiar props tal cual
+		const props = Array.isArray(m.props) ? m.props.map((p) => ({ ...p })) : [];
+
+		// Serializar apiMethods
+		const apiMethods: any = {};
+		const srcMethods: any = (m as any).apiMethods || {};
+		for (const [op, specs] of Object.entries(srcMethods)) {
+			const arr = Array.isArray(specs) ? specs : [];
+			apiMethods[op] = arr.map((s: any) => {
+				if (typeof s === "string") return s;
+				if (!s || typeof s !== "object") return s;
+				const out: any = { ...s };
+				if (out.args && typeof out.args === "object") {
+					out.args = { ...out.args };
+					// Si hay una función en args.fn, agregar __fn serializable
+					if (typeof out.args.fn === "function") {
+						try {
+							out.args.__fn = out.args.fn.toString();
+						} catch {}
+					}
+				}
+				// No tocar middlewares anidados aquí
+				return out;
+			});
+		}
+
+		return {
+			className: m.className,
+			resource: m.resource,
+			plural: m.plural,
+			basePath: m.basePath,
+			globalConfig: m.globalConfig,
+			apiMethods,
+			props,
+		} as any;
+	});
+
 	return {
-		models: Array.from(REGISTRY.models.values()),
+		models,
 		resolvers: {},
 	};
 }

@@ -70,46 +70,45 @@ async function processModelValidation(data: any, modelMeta: any) {
 
 // Determinar operación de la URL
 function parseRoute(url: string, method: string, modelMeta: any): string {
-        const pathParts = url.replace(/^\/api\//, "").split("/");
-        if (pathParts[pathParts.length - 1]?.includes("?")) {
-                pathParts[pathParts.length - 1] = pathParts[pathParts.length - 1].split("?")[0];
-        }
-        const m = method.toLowerCase();
-        if (pathParts.length === 1) {
-                const resource = pathParts[0];
-                const isSingular = resource === modelMeta.resource;
-                if (m === "post") return isSingular ? "create" : "createAll";
-                if (m === "put" || m === "patch") return isSingular ? "update" : "updateAll";
-                if (m === "delete") return isSingular ? "delete" : "deleteAll";
-                return isSingular ? "get" : "getAll";
-        } else if (pathParts.length === 2 && pathParts[1] === "by-name") {
-                return "getByName";
-        }
-        return "get";
+	const pathParts = url.replace(/^\/api\//, "").split("/");
+	if (pathParts[pathParts.length - 1]?.includes("?")) {
+		pathParts[pathParts.length - 1] = pathParts[pathParts.length - 1].split("?")[0];
+	}
+	const m = method.toLowerCase();
+	if (pathParts.length === 1) {
+		const resource = pathParts[0];
+		const isSingular = resource === modelMeta.resource;
+		if (m === "post") return isSingular ? "create" : "createAll";
+		if (m === "put" || m === "patch") return isSingular ? "update" : "updateAll";
+		if (m === "delete") return isSingular ? "delete" : "deleteAll";
+		return isSingular ? "get" : "getAll";
+	} else if (pathParts.length === 2 && pathParts[1] === "by-name") {
+		return "getByName";
+	}
+	return "get";
 }
 
 function expandServerSpecs(specs: any[]): EnhancedMiddlewareSpec[] {
-        const out: EnhancedMiddlewareSpec[] = [];
-        const requestMiddlewares = new Set([
-                "postRequest",
-                "postAllRequest",
-                "getRequest",
-                "getAllRequest",
-                "putRequest",
-                "putAllRequest",
-                "deleteRequest",
-                "deleteAllRequest",
-        ]);
-        for (const s of specs || []) {
-                if (s && typeof s === "object" && requestMiddlewares.has(s.name) && s.args?.middlewares) {
-                        out.push(...(s.args.middlewares as any[]));
-                } else if (s && typeof s === "object" && s.name === "logRequest") {
-                        continue;
-                } else {
-                        out.push(s as any);
-                }
-        }
-        return out;
+	const out: EnhancedMiddlewareSpec[] = [];
+	const requestMiddlewares = new Set([
+		"postRequest",
+		"postAllRequest",
+		"getRequest",
+		"getAllRequest",
+		"putRequest",
+		"putAllRequest",
+		"deleteRequest",
+		"deleteAllRequest",
+	]);
+
+	for (const s of specs || []) {
+		if (s && typeof s === "object" && requestMiddlewares.has(s.name) && s.args?.middlewares) {
+			// Para requests, solo incluir sus middlewares anidados (que son server-only)
+			out.push(...(s.args.middlewares as any[]));
+		}
+		// No incluir middlewares externos - esos son para el cliente
+	}
+	return out;
 }
 
 export default eventHandler(async (event) => {
@@ -162,8 +161,8 @@ export default eventHandler(async (event) => {
 		payload = p;
 	};
 
-        // Validaciones de entrada para operaciones que reciben datos
-        if (["create", "createAll", "update", "updateAll"].includes(op)) {
+	// Validaciones de entrada para operaciones que reciben datos
+	if (["create", "createAll", "update", "updateAll"].includes(op)) {
 		try {
 			const body = await readBody(event);
 			if (body) {

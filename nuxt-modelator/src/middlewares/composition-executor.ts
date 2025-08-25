@@ -7,12 +7,7 @@ import type {
 	HybridMiddleware,
 	NextFunction,
 } from "../types.js";
-import {
-        clientMiddlewares,
-        serverMiddlewares,
-        hybridMiddlewares,
-        ensureBuiltInMiddlewares,
-} from "./auto-registry.js";
+import { clientMiddlewares, serverMiddlewares, hybridMiddlewares, ensureBuiltInMiddlewares } from "./auto-registry.js";
 
 // ======= INTERFACES PARA CONTEXTO UNIFICADO =======
 
@@ -64,13 +59,13 @@ async function buildMiddlewareChain(specs: EnhancedMiddlewareSpec[], context: Un
 // ======= RESOLUCIÓN DE MIDDLEWARES =======
 
 async function resolveMiddlewares(
-        specs: EnhancedMiddlewareSpec[],
-        context: UnifiedContext
+	specs: EnhancedMiddlewareSpec[],
+	context: UnifiedContext
 ): Promise<Array<(ctx: UnifiedContext, next: NextFunction) => Promise<void>>> {
-        // Ensure built-in middlewares are registered before resolving
-        await ensureBuiltInMiddlewares();
+	// Ensure built-in middlewares are registered before resolving
+	await ensureBuiltInMiddlewares();
 
-        const resolvedMiddlewares: Array<(ctx: UnifiedContext, next: NextFunction) => Promise<void>> = [];
+	const resolvedMiddlewares: Array<(ctx: UnifiedContext, next: NextFunction) => Promise<void>> = [];
 
 	for (const spec of specs) {
 		if (typeof spec === "string") {
@@ -137,8 +132,24 @@ async function resolveConfiguredMiddleware(
 		return resolveSimpleMiddleware(spec, context);
 	}
 
+	let effectiveStage = spec.stage;
+
+	// Auto-detectar stage para middlewares híbridos sin stage explícito
+	if (!effectiveStage) {
+		const { name } = spec;
+
+		if (name && hybridMiddlewares[name]) {
+			// Si es híbrido y estamos en cliente, asumir client
+			// Si es híbrido y estamos en servidor, asumir server
+			effectiveStage = context.stage;
+		} else {
+			// Si no es híbrido, usar comportamiento por defecto
+			effectiveStage = "server";
+		}
+	}
+
 	// Verificar si debe ejecutarse en este stage
-	const shouldExecute = !spec.stage || spec.stage === "isomorphic" || spec.stage === context.stage;
+	const shouldExecute = effectiveStage === "isomorphic" || effectiveStage === context.stage;
 
 	if (!shouldExecute) {
 		return null;

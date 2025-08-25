@@ -44,13 +44,17 @@ export const cache = (config?: any): MiddlewareSpec => ({ name: "cache", args: c
 
 // Helpers para middlewares híbridos
 export const run = (fn?: any, options?: { after?: boolean }): MiddlewareSpec => ({
-        name: "run",
-        args: { fn, after: options?.after },
-        stage: "isomorphic",
+	name: "run",
+	args: { fn, after: options?.after },
+	stage: "isomorphic",
 });
 export const rateLimit = (config: any): MiddlewareSpec => ({ name: "rateLimit", args: config, stage: "isomorphic" });
 export const debug = (config?: any): MiddlewareSpec => ({ name: "debug", args: config, stage: "isomorphic" });
-export const throttle = (wait: number, options?: any): MiddlewareSpec => ({ name: "throttle", args: { wait, ...(options || {}) }, stage: "isomorphic" });
+export const throttle = (wait: number, options?: any): MiddlewareSpec => ({
+	name: "throttle",
+	args: { wait, ...(options || {}) },
+	stage: "isomorphic",
+});
 export const debounce = (wait: number): MiddlewareSpec => ({ name: "debounce", args: wait, stage: "isomorphic" });
 export const retryable = (retries: number): MiddlewareSpec => ({ name: "retryable", args: retries, stage: "isomorphic" });
 export const cacheable = (config: any): MiddlewareSpec => ({ name: "cacheable", args: config, stage: "isomorphic" });
@@ -77,24 +81,32 @@ export const logRequest = (config?: {
  * ```
  */
 type HttpRequestConfig = {
-        url?: string | ((ctx: any) => string);
-        headers?: Record<string, string>;
-        method?: string;
-        baseUrl?: string;
-        middlewares?: MiddlewareSpec[]; // Middlewares que solo se ejecutan en servidor
-        bodyMapper?: (data: any, ctx?: any) => any;
+	url?: string | ((ctx: any) => string);
+	headers?: Record<string, string>;
+	method?: string;
+	baseUrl?: string;
+	middlewares?: MiddlewareSpec[]; // Middlewares que solo se ejecutan en servidor
+	bodyMapper?: (data: any, ctx?: any) => any;
 };
 
 const reqStage = (config?: HttpRequestConfig) => (config?.url ? "client" : "isomorphic");
 
 export const postRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "postRequest", args: config, stage: reqStage(config) });
-export const postAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "postAllRequest", args: config, stage: reqStage(config) });
+export const postAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({
+	name: "postAllRequest",
+	args: config,
+	stage: reqStage(config),
+});
 export const getRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "getRequest", args: config, stage: reqStage(config) });
 export const getAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "getAllRequest", args: config, stage: reqStage(config) });
 export const putRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "putRequest", args: config, stage: reqStage(config) });
 export const putAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "putAllRequest", args: config, stage: reqStage(config) });
 export const deleteRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "deleteRequest", args: config, stage: reqStage(config) });
-export const deleteAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "deleteAllRequest", args: config, stage: reqStage(config) });
+export const deleteAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({
+	name: "deleteAllRequest",
+	args: config,
+	stage: reqStage(config),
+});
 
 // ======= HELPER PARA COMPOSICIÓN FÁCIL =======
 
