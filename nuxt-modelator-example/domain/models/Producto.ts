@@ -9,13 +9,14 @@ import {
 	mongoDelete,
 	mongoSaveOrUpdate,
 	mongoCrudBlock,
-	mongoBlock,
-	mongoInfo,
-	debug,
-	rateLimit,
-	addToPlural,
-	populateArray,
-	postRequest,
+        mongoBlock,
+        mongoInfo,
+        debug,
+        rateLimit,
+        run,
+        addToPlural,
+        populateArray,
+        postRequest,
 } from "nuxt-modelator/dist/middlewares";
 
 // Alias temporales para los nuevos middlewares híbridos
@@ -65,25 +66,29 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 		],
 
 		// 📖 READ ALL: Obtener todos los productos (paginado)
-		getAll: [
-			logRequest(),
-			getAllRequest({
-				middlewares: [
-					timed({ label: "get-all-products" }),
-					dbConnect(), // Auto-detecta MongoDB del dbConfig
-					mongoInfo(), // Agregar info de conexión al response
-					mongoQuery({
-						operation: "find",
-						options: {
-							limit: 50,
-							sort: { createdAt: -1 }, // Más recientes primero
-							// populate: ["supplier"] // Si tuviera relaciones
-						},
-					}),
-				],
-			}),
-			populateArray(), // Sobrescribir array completo con datos de DB
-		],
+                getAll: [
+                        logRequest(),
+                        run(() => console.log("inicio-cliente")),
+                        getAllRequest({
+                                middlewares: [
+                                        run(() => console.log("inicio-server")),
+                                        timed({ label: "get-all-products" }),
+                                        dbConnect(), // Auto-detecta MongoDB del dbConfig
+                                        mongoInfo(), // Agregar info de conexión al response
+                                        mongoQuery({
+                                                operation: "find",
+                                                options: {
+                                                        limit: 50,
+                                                        sort: { createdAt: -1 }, // Más recientes primero
+                                                        // populate: ["supplier"] // Si tuviera relaciones
+                                                },
+                                        }),
+                                        run(() => console.log("fin-server")),
+                                ],
+                        }),
+                        run(() => console.log("fin-cliente")),
+                        populateArray(), // Sobrescribir array completo con datos de DB
+                ],
 
 		// 🔍 READ ONE: Obtener producto por ID
 		get: [

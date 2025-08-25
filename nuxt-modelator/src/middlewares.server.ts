@@ -35,6 +35,7 @@ export {
         deleteRequest,
         deleteAllRequest,
         logRequest,
+        run,
         rateLimit,
         debug,
         // Middlewares de cliente (para composición híbrida)

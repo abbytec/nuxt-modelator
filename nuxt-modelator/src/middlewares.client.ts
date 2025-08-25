@@ -20,4 +20,5 @@ export {
         deleteRequest,
         deleteAllRequest,
         logRequest,
+        run,
 } from "./middlewares/index.js";
