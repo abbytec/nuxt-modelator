@@ -19,7 +19,14 @@ import {
 
 // Alias temporales para los nuevos middlewares híbridos
 // @ts-ignore - Los middlewares híbridos están disponibles en runtime pero faltan en las declaraciones
-const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
+const {
+        postAllRequest,
+        getAllRequest,
+        getRequest,
+        putRequest,
+        deleteRequest,
+        logRequest,
+} = require("nuxt-modelator/dist/middlewares");
 
 // ✨ MODELO COMPLETO CON MONGODB Y COMPOSICIÓN VERDADERA
 @Model(
@@ -43,18 +50,16 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		},
 	},
 	// ======= ENDPOINTS CON SEPARACIÓN CLIENT/SERVER =======
-	// ✨ NUEVA SINTAXIS HÍBRIDA:
-	// - logRequest(): Se ejecuta en cliente Y servidor para logging completo
-	// - postRequest({ middlewares: [...] }):
-	//   - Cliente: Hace llamada HTTP al endpoint
-	//   - Servidor: Ejecuta middlewares anidados (DB, auth, etc.)
-	// - addToPlural(): Se ejecuta solo en cliente después de la respuesta HTTP para CREAR
-	// - populateArray(): Sobrescriba el array completo con datos de lectura
+        // ✨ NUEVA SINTAXIS HÍBRIDA:
+        // - logRequest(): Se ejecuta en cliente Y servidor para logging completo
+        // - postAllRequest/getAllRequest/etc.: Requests HTTP con middlewares anidados en servidor
+        // - addToPlural(): Se ejecuta solo en cliente después de la respuesta HTTP para CREAR
+        // - populateArray(): Sobrescriba el array completo con datos de lectura
 	{
 		// 📋 CREATE: Crear nuevo producto
-		create: [
-			logRequest(), // aparece en la consola del navegador y servidor
-			postRequest({
+                create: [
+                        logRequest(), // aparece en la consola del navegador y servidor
+                        postAllRequest({
 				middlewares: [
 					timed({ label: "create-product", logResults: true }),
 					rateLimit({ maxRequests: 5, windowMs: 60000 }), // Max 5 por minuto
@@ -66,9 +71,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// 📖 READ ALL: Obtener todos los productos (paginado)
-		getAll: [
-			logRequest(),
-			postRequest({
+                getAll: [
+                        logRequest(),
+                        getAllRequest({
 				middlewares: [
 					timed({ label: "get-all-products" }),
 					dbConnect(), // Auto-detecta MongoDB del dbConfig
@@ -87,9 +92,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// 🔍 READ ONE: Obtener producto por ID
-		get: [
-			logRequest(),
-			postRequest({
+                get: [
+                        logRequest(),
+                        getRequest({
 				middlewares: [
 					timed({ label: "get-product-by-id" }),
 					dbConnect(),
@@ -102,9 +107,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// ✏️ UPDATE: Actualizar producto existente
-		update: [
-			logRequest({ logLevel: "info" }),
-			postRequest({
+                update: [
+                        logRequest({ logLevel: "info" }),
+                        putRequest({
 				middlewares: [
 					timed({ label: "update-product", threshold: 500 }), // Solo loguear si toma >500ms
 					rateLimit({ maxRequests: 10, windowMs: 60000 }),
@@ -117,9 +122,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// ❌ DELETE: Eliminar producto
-		delete: [
-			logRequest({ logLevel: "warn" }), // Log más visible para operaciones de eliminación
-			postRequest({
+                delete: [
+                        logRequest({ logLevel: "warn" }), // Log más visible para operaciones de eliminación
+                        deleteRequest({
 				middlewares: [
 					timed({ label: "delete-product" }),
 					rateLimit({ maxRequests: 3, windowMs: 60000 }), // Más restrictivo para delete
@@ -132,9 +137,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// 🔄 SAVE OR UPDATE: Crear o actualizar (upsert)
-		saveOrUpdate: [
-			logRequest(),
-			postRequest({
+                saveOrUpdate: [
+                        logRequest(),
+                        postAllRequest({
 				middlewares: [
 					timed({ label: "save-or-update-product" }),
 					rateLimit({ maxRequests: 10, windowMs: 60000 }),
@@ -147,9 +152,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		// ======= MÉTODOS PERSONALIZADOS =======
 
 		// 🏷️ Buscar por categoría
-		getByCategory: [
-			logRequest(),
-			postRequest({
+                getByCategory: [
+                        logRequest(),
+                        getAllRequest({
 				middlewares: [
 					timed({ label: "get-by-category" }),
 					dbConnect(),
@@ -167,9 +172,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// 💰 Productos en oferta
-		getOnSale: [
-			logRequest(),
-			postRequest({
+                getOnSale: [
+                        logRequest(),
+                        getAllRequest({
 				middlewares: [
 					timed({ label: "get-on-sale" }),
 					...mongoBlock({
@@ -190,9 +195,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// 🔎 Búsqueda por texto completo
-		search: [
-			logRequest(),
-			postRequest({
+                search: [
+                        logRequest(),
+                        getAllRequest({
 				middlewares: [
 					timed({ label: "text-search" }),
 					dbConnect(),
@@ -214,9 +219,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// 📊 Obtener estadísticas básicas
-		getStats: [
-			logRequest(),
-			postRequest({
+                getStats: [
+                        logRequest(),
+                        getAllRequest({
 				middlewares: [
 					timed({ label: "get-stats" }),
 					...mongoBlock({
@@ -229,9 +234,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// 📈 Productos más caros
-		getMostExpensive: [
-			logRequest(),
-			postRequest({
+                getMostExpensive: [
+                        logRequest(),
+                        getAllRequest({
 				middlewares: [
 					...mongoBlock({
 						operation: "query",
@@ -247,9 +252,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// 🆕 Productos recientes (últimos 30 días)
-		getRecent: [
-			logRequest(),
-			postRequest({
+                getRecent: [
+                        logRequest(),
+                        getAllRequest({
 				middlewares: [
 					timed({ label: "get-recent" }),
 					mongoQuery({
@@ -270,9 +275,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// 🏭 Productos por proveedor
-		getBySupplier: [
-			logRequest(),
-			postRequest({
+                getBySupplier: [
+                        logRequest(),
+                        getAllRequest({
 				middlewares: [
 					mongoQuery({
 						operation: "find",
@@ -285,9 +290,9 @@ const { postRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 		],
 
 		// 🔢 Actualizar stock (usando middleware estándar)
-		updateStock: [
-			logRequest(),
-			postRequest({
+                updateStock: [
+                        logRequest(),
+                        putRequest({
 				middlewares: [
 					timed({ label: "update-stock" }),
 					rateLimit({ maxRequests: 5, windowMs: 60000 }),

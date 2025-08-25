@@ -88,17 +88,27 @@ function parseRoute(url: string, method: string, modelMeta: any): string {
 }
 
 function expandServerSpecs(specs: any[]): EnhancedMiddlewareSpec[] {
-	const out: EnhancedMiddlewareSpec[] = [];
-	for (const s of specs || []) {
-		if (s && typeof s === "object" && s.name === "postRequest" && s.args?.middlewares) {
-			out.push(...(s.args.middlewares as any[]));
-		} else if (s && typeof s === "object" && s.name === "logRequest") {
-			continue;
-		} else {
-			out.push(s as any);
-		}
-	}
-	return out;
+        const out: EnhancedMiddlewareSpec[] = [];
+        const requestMiddlewares = new Set([
+                "postRequest",
+                "postAllRequest",
+                "getRequest",
+                "getAllRequest",
+                "putRequest",
+                "putAllRequest",
+                "deleteRequest",
+                "deleteAllRequest",
+        ]);
+        for (const s of specs || []) {
+                if (s && typeof s === "object" && requestMiddlewares.has(s.name) && s.args?.middlewares) {
+                        out.push(...(s.args.middlewares as any[]));
+                } else if (s && typeof s === "object" && s.name === "logRequest") {
+                        continue;
+                } else {
+                        out.push(s as any);
+                }
+        }
+        return out;
 }
 
 export default eventHandler(async (event) => {
