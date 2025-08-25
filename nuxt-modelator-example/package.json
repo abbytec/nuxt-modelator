@@ -15,7 +15,7 @@
 		"build": "^0.1.4",
 		"mongoose": "^8.1.1",
 		"nuxt": "^3.12.0",
-		"nuxt-modelator": "file:../nuxt-modelator",
+		"nuxt-modelator": "1.0.0",
 		"pinia": "^2.2.4",
 		"reflect-metadata": "^0.1.13"
 	},
