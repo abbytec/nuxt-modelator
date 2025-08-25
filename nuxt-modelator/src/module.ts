@@ -47,9 +47,7 @@ const _module = defineNuxtModule<ModuleOptions>({
 			logger.info(`[modelator] Cargando modelos (${files.length})...`);
 
 			// Usar jiti para cargar archivos TypeScript
-			const jiti = createJiti(root, {
-				interopDefault: true,
-			});
+			const jiti = createJiti(root, { interopDefault: true });
 
 			for (const f of files) {
 				try {
@@ -139,72 +137,67 @@ function hasServerSpecs(opSpecs: any[]): boolean {
 	});
 }
 
+function addRoute(route: string, method: "get" | "post" | "put" | "delete", resolve: any) {
+	addServerHandler({ route, handler: resolve("./runtime/universal-handler.js"), method });
+	logger.info(`[modelator] - ${method.toUpperCase()} ${route}`);
+}
+
 function emitRoutesForModel(m: ModelMeta, resolve: any) {
 	logger.info(`[modelator] Creando endpoints para modelo ${m.resource}:`);
 
-	// GET singular
+	// === GET ===
+	// Singular
 	if (hasServerSpecs((m.apiMethods as any).get)) {
-		addServerHandler({
-			route: `${m.basePath}/${m.resource}`,
-			handler: resolve("./runtime/universal-handler.js"),
-			method: "get",
-		});
-		logger.info(`[modelator] - GET ${m.basePath}/${m.resource}`);
+		addRoute(`${m.basePath}/${m.resource}`, "get", resolve);
 	}
-
-	// GET colección (si está habilitado y hay server specs)
+	// Colección
 	if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).getAll)) {
-		addServerHandler({
-			route: `${m.basePath}/${m.plural}`,
-			handler: resolve("./runtime/universal-handler.js"),
-			method: "get",
-		});
-		logger.info(`[modelator] - GET ${m.basePath}/${m.plural}`);
+		addRoute(`${m.basePath}/${m.plural}`, "get", resolve);
 	}
 
-	// POST para crear (si hay specs server en create)
+	// === POST (CREATE) ===
+	// Singular (alias para create one)
 	if (hasServerSpecs((m.apiMethods as any).create)) {
-		addServerHandler({
-			route: `${m.basePath}/${m.plural}`,
-			handler: resolve("./runtime/universal-handler.js"),
-			method: "post",
-		});
-		logger.info(`[modelator] - POST ${m.basePath}/${m.plural}`);
+		addRoute(`${m.basePath}/${m.resource}`, "post", resolve);
+	}
+	// Colección (create many / create on collection)
+	if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).create)) {
+		addRoute(`${m.basePath}/${m.plural}`, "post", resolve);
 	}
 
-	// PUT para update (si hay specs server)
+	// === PUT (UPDATE) ===
+	// Singular (update one)
 	if (hasServerSpecs((m.apiMethods as any).update)) {
-		addServerHandler({
-			route: `${m.basePath}/${m.resource}`,
-			handler: resolve("./runtime/universal-handler.js"),
-			method: "put",
-		});
-		logger.info(`[modelator] - PUT ${m.basePath}/${m.resource}`);
+		addRoute(`${m.basePath}/${m.resource}`, "put", resolve);
+	}
+	// Colección (bulk update)
+	if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).update)) {
+		addRoute(`${m.basePath}/${m.plural}`, "put", resolve);
 	}
 
-	// DELETE para delete (si hay specs server)
+	// === DELETE ===
+	// Singular (delete one)
 	if (hasServerSpecs((m.apiMethods as any).delete)) {
-		addServerHandler({
-			route: `${m.basePath}/${m.resource}`,
-			handler: resolve("./runtime/universal-handler.js"),
-			method: "delete",
-		});
-		logger.info(`[modelator] - DELETE ${m.basePath}/${m.resource}`);
+		addRoute(`${m.basePath}/${m.resource}`, "delete", resolve);
+	}
+	// Colección (bulk delete)
+	if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).delete)) {
+		addRoute(`${m.basePath}/${m.plural}`, "delete", resolve);
 	}
 
-	// Subruta: /by-name (si existen specs server)
+	// === Subrutas por nombre ===
+	// Singular: /by-name (alias)
 	if (hasServerSpecs((m.apiMethods as any).getByName)) {
-		addServerHandler({
-			route: `${m.basePath}/${m.plural}/by-name`,
-			handler: resolve("./runtime/universal-handler.js"),
-			method: "get",
-		});
-		logger.info(`[modelator] - GET ${m.basePath}/${m.plural}/by-name`);
+		addRoute(`${m.basePath}/${m.resource}/by-name`, "get", resolve);
+	}
+	// Plural: /by-name (colección)
+	if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).getByName)) {
+		addRoute(`${m.basePath}/${m.plural}/by-name`, "get", resolve);
 	}
 }
 
 function emitPiniaStore(m: ModelMeta) {
-	const storeTemplate = addTemplate({
+	addTemplate({
 		filename: `nuxt-modelator/stores/use${capitalize(m.resource)}Store.ts`,
 		getContents: () =>
 			piniaStoreTpl({
@@ -214,7 +207,6 @@ function emitPiniaStore(m: ModelMeta) {
 				modelMeta: m,
 			}),
 	});
-
 	logger.info(`[modelator] Creando store use${capitalize(m.resource)}Store`);
 }
 
