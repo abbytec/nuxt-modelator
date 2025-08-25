@@ -63,23 +63,28 @@ export async function connectToMongoDB(config: MongoDbConfig): Promise<MongooseC
 	try {
 		console.info(`[mongoose-manager] Connecting to MongoDB: ${config.connectionURI.replace(/\/\/.*@/, "//***@")}`);
 
-		const connection = await mg.connect(config.connectionURI, {
-			...config.options,
-			// Defaults para mejor rendimiento
-			maxPoolSize: config.options?.maxPoolSize ?? 10,
-			minPoolSize: config.options?.minPoolSize ?? 5,
-			maxIdleTimeMS: config.options?.maxIdleTimeMS ?? 30000,
-			serverSelectionTimeoutMS: config.options?.serverSelectionTimeoutMS ?? 5000,
-			socketTimeoutMS: config.options?.socketTimeoutMS ?? 45000,
-		});
+                await mg.connect(config.connectionURI, {
+                        ...config.options,
+                        // Defaults para mejor rendimiento
+                        maxPoolSize: config.options?.maxPoolSize ?? 10,
+                        minPoolSize: config.options?.minPoolSize ?? 5,
+                        maxIdleTimeMS: config.options?.maxIdleTimeMS ?? 30000,
+                        serverSelectionTimeoutMS: config.options?.serverSelectionTimeoutMS ?? 5000,
+                        socketTimeoutMS: config.options?.socketTimeoutMS ?? 45000,
+                });
 
-		currentConnection = {
-			isConnected: true,
-			connection: mg.connection,
-			models: new Map(),
-			config,
-			connectedAt: new Date(),
-		};
+                // Mongoose 8 removió la propiedad `connection`. Tomamos la primera
+                // conexión activa disponible para mantener compatibilidad.
+                const activeConnection =
+                        mg.connection || (Array.isArray(mg.connections) ? mg.connections[0] : undefined);
+
+                currentConnection = {
+                        isConnected: true,
+                        connection: activeConnection,
+                        models: new Map(),
+                        config,
+                        connectedAt: new Date(),
+                };
 
 		console.info("[mongoose-manager] MongoDB connection established");
 		return currentConnection;
@@ -396,9 +401,9 @@ export function getConnectionInfo(): any {
 	return {
 		connected: true,
 		connectionURI: currentConnection.config.connectionURI.replace(/\/\/.*@/, "//***@"),
-		connectedAt: currentConnection.connectedAt,
-		modelsLoaded: Array.from(currentConnection.models.keys()),
-		readyState: currentConnection.connection.readyState,
-		db: currentConnection.connection.db?.databaseName,
-	};
+                connectedAt: currentConnection.connectedAt,
+                modelsLoaded: Array.from(currentConnection.models.keys()),
+                readyState: currentConnection.connection?.readyState,
+                db: currentConnection.connection?.db?.databaseName,
+        };
 }
