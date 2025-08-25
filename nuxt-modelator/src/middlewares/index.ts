@@ -43,7 +43,11 @@ export const addToPlural = (config?: any): MiddlewareSpec => ({ name: "addToPlur
 export const cache = (config?: any): MiddlewareSpec => ({ name: "cache", args: config, stage: "client" });
 
 // Helpers para middlewares híbridos
-export const run = (fn?: any): MiddlewareSpec => ({ name: "run", args: fn, stage: "isomorphic" });
+export const run = (fn?: any, options?: { after?: boolean }): MiddlewareSpec => ({
+        name: "run",
+        args: { fn, after: options?.after },
+        stage: "isomorphic",
+});
 export const rateLimit = (config: any): MiddlewareSpec => ({ name: "rateLimit", args: config, stage: "isomorphic" });
 export const debug = (config?: any): MiddlewareSpec => ({ name: "debug", args: config, stage: "isomorphic" });
 export const throttle = (wait: number, options?: any): MiddlewareSpec => ({ name: "throttle", args: { wait, ...(options || {}) }, stage: "isomorphic" });

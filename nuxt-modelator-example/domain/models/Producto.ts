@@ -83,10 +83,10 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
                                                         // populate: ["supplier"] // Si tuviera relaciones
                                                 },
                                         }),
-                                        run(() => console.log("fin-server")),
+                                        run(() => console.log("fin-server"), { after: true }),
                                 ],
                         }),
-                        run(() => console.log("fin-cliente")),
+                        run(() => console.log("fin-cliente"), { after: true }),
                         populateArray(), // Sobrescribir array completo con datos de DB
                 ],
 

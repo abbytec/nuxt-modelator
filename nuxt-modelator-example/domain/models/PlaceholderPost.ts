@@ -20,7 +20,7 @@ const limitFive = (ctx: any) => {
   {
     getAll: [
       logRequest(),
-      run(limitFive),
+      run(limitFive, { after: true }),
       getAllRequest({
         url: 'https://jsonplaceholder.typicode.com/posts',
       }),
