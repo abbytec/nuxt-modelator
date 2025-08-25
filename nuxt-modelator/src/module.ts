@@ -131,22 +131,23 @@ const modulePortable = _module as unknown as PortableNuxtModule<ModuleOptions>;
 export default modulePortable;
 
 // ---- helpers ----
-const requestMiddlewareNames = new Set([
-        "postRequest",
-        "postAllRequest",
-        "getRequest",
-        "getAllRequest",
-        "putRequest",
-        "putAllRequest",
-        "deleteRequest",
-        "deleteAllRequest",
-]);
+const requestMiddlewareRE = /^(get|post|put|delete)(All)?Request$/;
+
+function isRequestMiddleware(name: string) {
+        return requestMiddlewareRE.test(name);
+}
+
+function parseRequestMiddleware(name: string): { method: "get" | "post" | "put" | "delete"; plural: boolean } | null {
+        const m = requestMiddlewareRE.exec(name);
+        if (!m) return null;
+        return { method: m[1] as any, plural: !!m[2] };
+}
 
 function getMiddlewareStage(name: string, args?: any): "server" | "client" | "hybrid" {
         if (serverMiddlewares[name]) return "server";
         if (clientMiddlewares[name]) return "client";
         if (hybridMiddlewares[name]) {
-                if (requestMiddlewareNames.has(name) && args && typeof args === "object" && (args as any).url) {
+                if (isRequestMiddleware(name) && args && typeof args === "object" && (args as any).url) {
                         return "client";
                 }
                 return "hybrid";
@@ -160,7 +161,7 @@ function hasServerSpecs(opSpecs: any[]): boolean {
         const hasExternalRequest = specs.some(
                 (s) =>
                         typeof s === "object" &&
-                        requestMiddlewareNames.has(s.name) &&
+                        isRequestMiddleware(s.name) &&
                         s.args &&
                         typeof s.args === "object" &&
                         (s.args as any).url
@@ -182,62 +183,27 @@ function addRoute(route: string, method: "get" | "post" | "put" | "delete", reso
 }
 
 function emitRoutesForModel(m: ModelMeta, resolve: any) {
-	logger.info(`[modelator] Creando endpoints para modelo ${m.resource}:`);
+        logger.info(`[modelator] Creando endpoints para modelo ${m.resource}:`);
+        const added = new Set<string>();
 
-	// === GET ===
-	// Singular
-	if (hasServerSpecs((m.apiMethods as any).get)) {
-		addRoute(`${m.basePath}/${m.resource}`, "get", resolve);
-	}
-	// Colección
-	if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).getAll)) {
-		addRoute(`${m.basePath}/${m.plural}`, "get", resolve);
-	}
+        for (const specs of Object.values(m.apiMethods)) {
+                if (!specs || !hasServerSpecs(specs)) continue;
 
-        // === POST (CREATE) ===
-        // Singular (alias para create one)
-        if (hasServerSpecs((m.apiMethods as any).create)) {
-                addRoute(`${m.basePath}/${m.resource}`, "post", resolve);
-        }
-        // Colección (create many / create on collection)
-        if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).createAll)) {
-                addRoute(`${m.basePath}/${m.plural}`, "post", resolve);
-        }
+                const arr = Array.isArray(specs) ? specs : [];
+                for (const s of arr) {
+                        if (!s) continue;
+                        const name = typeof s === "string" ? s : s.name;
+                        const parsed = parseRequestMiddleware(name);
+                        if (!parsed) continue;
 
-        // === SAVE OR UPDATE (UPSERT) ===
-        if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).saveOrUpdate)) {
-                addRoute(`${m.basePath}/${m.plural}`, "post", resolve);
+                        const route = `${m.basePath}/${parsed.plural ? m.plural : m.resource}`;
+                        const key = `${parsed.method}:${route}`;
+                        if (added.has(key)) continue;
+                        addRoute(route, parsed.method, resolve);
+                        added.add(key);
+                        break;
+                }
         }
-
-        // === PUT (UPDATE) ===
-        // Singular (update one)
-        if (hasServerSpecs((m.apiMethods as any).update)) {
-                addRoute(`${m.basePath}/${m.resource}`, "put", resolve);
-        }
-        // Colección (bulk update)
-        if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).updateAll)) {
-                addRoute(`${m.basePath}/${m.plural}`, "put", resolve);
-        }
-
-        // === DELETE ===
-        // Singular (delete one)
-        if (hasServerSpecs((m.apiMethods as any).delete)) {
-                addRoute(`${m.basePath}/${m.resource}`, "delete", resolve);
-        }
-        // Colección (bulk delete)
-        if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).deleteAll)) {
-                addRoute(`${m.basePath}/${m.plural}`, "delete", resolve);
-        }
-
-	// === Subrutas por nombre ===
-	// Singular: /by-name (alias)
-	if (hasServerSpecs((m.apiMethods as any).getByName)) {
-		addRoute(`${m.basePath}/${m.resource}/by-name`, "get", resolve);
-	}
-	// Plural: /by-name (colección)
-	if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).getByName)) {
-		addRoute(`${m.basePath}/${m.plural}/by-name`, "get", resolve);
-	}
 }
 
 function emitPiniaStore(m: ModelMeta) {
