@@ -21,43 +21,41 @@ export type { ClientMiddleware, ServerMiddleware, HybridMiddleware, NextFunction
 import type { MiddlewareSpec } from "../types.js";
 
 // Helpers para middlewares de servidor
-export const isAuth = (): MiddlewareSpec => ({ name: "isAuth", stage: "server" });
-export const dbConnect = (config?: any): MiddlewareSpec => ({ name: "dbConnect", args: config, stage: "server" });
-export const transaction = (config?: any): MiddlewareSpec => ({ name: "transaction", args: config, stage: "server" });
-export const timed = (config?: any): MiddlewareSpec => ({ name: "timed", args: config, stage: "server" });
-export const sessionHasProperty = (config: any): MiddlewareSpec => ({ name: "sessionHasProperty", args: config, stage: "server" });
+export const isAuth = (): MiddlewareSpec => ({ name: "isAuth" });
+export const dbConnect = (config?: any): MiddlewareSpec => ({ name: "dbConnect", args: config });
+export const transaction = (config?: any): MiddlewareSpec => ({ name: "transaction", args: config });
+export const timed = (config?: any): MiddlewareSpec => ({ name: "timed", args: config });
+export const sessionHasProperty = (config: any): MiddlewareSpec => ({ name: "sessionHasProperty", args: config });
 
 // Helpers para middlewares de MongoDB
-export const mongoQuery = (config?: any): MiddlewareSpec => ({ name: "mongoQuery", args: config, stage: "server" });
-export const mongoSave = (config?: any): MiddlewareSpec => ({ name: "mongoSave", args: config, stage: "server" });
-export const mongoUpdate = (config?: any): MiddlewareSpec => ({ name: "mongoUpdate", args: config, stage: "server" });
-export const mongoDelete = (config?: any): MiddlewareSpec => ({ name: "mongoDelete", args: config, stage: "server" });
-export const mongoSaveOrUpdate = (config?: any): MiddlewareSpec => ({ name: "mongoSaveOrUpdate", args: config, stage: "server" });
-export const mongoInfo = (): MiddlewareSpec => ({ name: "mongoInfo", stage: "server" });
+export const mongoQuery = (config?: any): MiddlewareSpec => ({ name: "mongoQuery", args: config });
+export const mongoSave = (config?: any): MiddlewareSpec => ({ name: "mongoSave", args: config });
+export const mongoUpdate = (config?: any): MiddlewareSpec => ({ name: "mongoUpdate", args: config });
+export const mongoDelete = (config?: any): MiddlewareSpec => ({ name: "mongoDelete", args: config });
+export const mongoSaveOrUpdate = (config?: any): MiddlewareSpec => ({ name: "mongoSaveOrUpdate", args: config });
+export const mongoInfo = (): MiddlewareSpec => ({ name: "mongoInfo" });
 
 // Helpers para middlewares de cliente
-export const saveOnStore = (config?: any): MiddlewareSpec => ({ name: "saveOnStore", args: config, stage: "client" });
-export const populateArray = (config?: any): MiddlewareSpec => ({ name: "populateArray", args: config, stage: "client" });
-export const getFromPluralFiltered = (filter: any): MiddlewareSpec => ({ name: "getFromPluralFiltered", args: filter, stage: "client" });
-export const addToPlural = (config?: any): MiddlewareSpec => ({ name: "addToPlural", args: config, stage: "client" });
-export const cache = (config?: any): MiddlewareSpec => ({ name: "cache", args: config, stage: "client" });
+export const saveOnStore = (config?: any): MiddlewareSpec => ({ name: "saveOnStore", args: config });
+export const populateArray = (config?: any): MiddlewareSpec => ({ name: "populateArray", args: config });
+export const getFromPluralFiltered = (filter: any): MiddlewareSpec => ({ name: "getFromPluralFiltered", args: filter });
+export const addToPlural = (config?: any): MiddlewareSpec => ({ name: "addToPlural", args: config });
+export const cache = (config?: any): MiddlewareSpec => ({ name: "cache", args: config });
 
 // Helpers para middlewares híbridos
 export const run = (fn?: any, options?: { after?: boolean }): MiddlewareSpec => ({
-	name: "run",
-	args: { fn, after: options?.after },
-	stage: "isomorphic",
+        name: "run",
+        args: { fn, after: options?.after },
 });
-export const rateLimit = (config: any): MiddlewareSpec => ({ name: "rateLimit", args: config, stage: "isomorphic" });
-export const debug = (config?: any): MiddlewareSpec => ({ name: "debug", args: config, stage: "isomorphic" });
+export const rateLimit = (config: any): MiddlewareSpec => ({ name: "rateLimit", args: config });
+export const debug = (config?: any): MiddlewareSpec => ({ name: "debug", args: config });
 export const throttle = (wait: number, options?: any): MiddlewareSpec => ({
-	name: "throttle",
-	args: { wait, ...(options || {}) },
-	stage: "isomorphic",
+        name: "throttle",
+        args: { wait, ...(options || {}) },
 });
-export const debounce = (wait: number): MiddlewareSpec => ({ name: "debounce", args: wait, stage: "isomorphic" });
-export const retryable = (retries: number): MiddlewareSpec => ({ name: "retryable", args: retries, stage: "isomorphic" });
-export const cacheable = (config: any): MiddlewareSpec => ({ name: "cacheable", args: config, stage: "isomorphic" });
+export const debounce = (wait: number): MiddlewareSpec => ({ name: "debounce", args: wait });
+export const retryable = (retries: number): MiddlewareSpec => ({ name: "retryable", args: retries });
+export const cacheable = (config: any): MiddlewareSpec => ({ name: "cacheable", args: config });
 
 // ======= MIDDLEWARES HÍBRIDOS HTTP =======
 
@@ -65,10 +63,10 @@ export const cacheable = (config: any): MiddlewareSpec => ({ name: "cacheable", 
  * LogRequest híbrido - funciona en cliente y servidor
  */
 export const logRequest = (config?: {
-	logLevel?: "debug" | "info" | "warn" | "error";
-	includeArgs?: boolean;
-	includeState?: boolean;
-}): MiddlewareSpec => ({ name: "logRequest", args: config, stage: "isomorphic" });
+        logLevel?: "debug" | "info" | "warn" | "error";
+        includeArgs?: boolean;
+        includeState?: boolean;
+}): MiddlewareSpec => ({ name: "logRequest", args: config });
 
 /**
  * PostRequest híbrido - soporte para middlewares anidados que solo se ejecutan en servidor
@@ -89,23 +87,19 @@ type HttpRequestConfig = {
 	bodyMapper?: (data: any, ctx?: any) => any;
 };
 
-const reqStage = (config?: HttpRequestConfig) => (config?.url ? "client" : "isomorphic");
-
-export const postRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "postRequest", args: config, stage: reqStage(config) });
+export const postRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "postRequest", args: config });
 export const postAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({
-	name: "postAllRequest",
-	args: config,
-	stage: reqStage(config),
+        name: "postAllRequest",
+        args: config,
 });
-export const getRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "getRequest", args: config, stage: reqStage(config) });
-export const getAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "getAllRequest", args: config, stage: reqStage(config) });
-export const putRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "putRequest", args: config, stage: reqStage(config) });
-export const putAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "putAllRequest", args: config, stage: reqStage(config) });
-export const deleteRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "deleteRequest", args: config, stage: reqStage(config) });
+export const getRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "getRequest", args: config });
+export const getAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "getAllRequest", args: config });
+export const putRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "putRequest", args: config });
+export const putAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "putAllRequest", args: config });
+export const deleteRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({ name: "deleteRequest", args: config });
 export const deleteAllRequest = (config?: HttpRequestConfig): MiddlewareSpec => ({
-	name: "deleteAllRequest",
-	args: config,
-	stage: reqStage(config),
+        name: "deleteAllRequest",
+        args: config,
 });
 
 // ======= HELPER PARA COMPOSICIÓN FÁCIL =======

@@ -1,6 +1,7 @@
 import { eventHandler } from "h3";
 import { getManifest } from "../registry.js";
 import { join } from "pathe";
+import { clientMiddlewares, serverMiddlewares, hybridMiddlewares } from "../middlewares/auto-registry.js";
 
 async function ensureModelsLoaded(): Promise<void> {
 	const g = globalThis as any;
@@ -26,17 +27,54 @@ async function ensureModelsLoaded(): Promise<void> {
 	}
 }
 
+const requestMiddlewareNames = new Set([
+        "postRequest",
+        "postAllRequest",
+        "getRequest",
+        "getAllRequest",
+        "putRequest",
+        "putAllRequest",
+        "deleteRequest",
+        "deleteAllRequest",
+]);
+
+function getMiddlewareStage(name: string, args?: any): "server" | "client" | "hybrid" {
+        if (serverMiddlewares[name]) return "server";
+        if (clientMiddlewares[name]) return "client";
+        if (hybridMiddlewares[name]) {
+                if (requestMiddlewareNames.has(name) && args && typeof args === "object" && (args as any).url) {
+                        return "client";
+                }
+                return "hybrid";
+        }
+        return "server";
+}
+
 function hasServerSpecs(opSpecs: any[]): boolean {
-        return (Array.isArray(opSpecs) ? opSpecs : []).some((s) => {
-                if (typeof s === "string") return true;
+        const specs = Array.isArray(opSpecs) ? opSpecs : [];
+
+        const hasExternalRequest = specs.some(
+                (s) =>
+                        typeof s === "object" &&
+                        requestMiddlewareNames.has(s.name) &&
+                        s.args &&
+                        typeof s.args === "object" &&
+                        (s.args as any).url
+        );
+        if (hasExternalRequest) return false;
+
+        return specs.some((s: any) => {
                 if (!s) return false;
-                const stage = s.stage ?? "server";
-                return stage === "server" || stage === "isomorphic";
+                const name = typeof s === "string" ? s : s.name;
+                const args = typeof s === "object" ? s.args : undefined;
+                const stage = getMiddlewareStage(name, args);
+                return stage === "server" || stage === "hybrid";
         });
 }
 
 export default eventHandler(async () => {
         await ensureModelsLoaded();
+        await import("../middlewares/index.js");
         const manifest = getManifest();
         const models = (manifest.models as any[]).map((m: any) => {
                 const endpoints: string[] = [];

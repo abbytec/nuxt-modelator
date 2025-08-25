@@ -162,7 +162,7 @@ export default eventHandler(async (event) => {
 	};
 
 	// Validaciones de entrada para operaciones que reciben datos
-	if (["create", "createAll", "update", "updateAll"].includes(op)) {
+        if (["create", "createAll", "update", "updateAll", "saveOrUpdate"].includes(op)) {
 		try {
 			const body = await readBody(event);
 			if (body) {

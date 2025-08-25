@@ -1,6 +1,6 @@
 import { eventHandler, getQuery, readBody, setResponseStatus } from "h3";
 import { getManifest } from "../registry.js";
-import { serverMiddlewares } from "../middlewares/auto-registry.js";
+import { executeHybridMiddlewares } from "../middlewares/hybrid-executor.js";
 import { defaultReturn } from "../middlewares.server.js";
 import { join } from "pathe";
 
@@ -72,41 +72,33 @@ export default eventHandler(async (event) => {
         const op = parseRoute(url, method, modelMeta);
         const model = modelMeta.resource;
         const specs = modelMeta.apiMethods[op] || [];
-	const state: any = {};
-	let returned = false;
-	let payload: any;
-	const done = (p: any) => {
-		returned = true;
-		payload = p;
-	};
+        const args = getQuery(event);
+        const state: any = {};
+        let returned = false;
+        let payload: any;
+        const done = (p: any) => {
+                returned = true;
+                payload = p;
+        };
 
         // Validaciones básicas para operaciones que envían datos
-        if (["create", "createAll", "update", "updateAll"].includes(op)) {
-		try {
-			const body = await readBody(event);
-			if (body && typeof body === "object") {
-				state.validatedData = body;
-			}
-		} catch {}
-	}
+        if (["create", "createAll", "update", "updateAll", "saveOrUpdate"].includes(op)) {
+                try {
+                        const body = await readBody(event);
+                        if (body && typeof body === "object") {
+                                state.validatedData = body;
+                        }
+                } catch {}
+        }
 
-	for (const spec of specs) {
-		const name = typeof spec === "string" ? spec : spec.name;
-		const args = typeof spec === "string" ? undefined : spec.args;
-		const stage = typeof spec === "string" ? "server" : spec.stage ?? "server";
-		if (stage !== "server") continue;
-		const factory = (serverMiddlewares as any)[name];
-		if (!factory) throw new Error(`Unknown server middleware: ${name}`);
-		await factory(args)({ event, op, model, args, state, done });
-		if (returned) break;
-	}
+        await executeHybridMiddlewares(specs as any, { event, op, model, args, state, done, stage: "server" });
 
-	if (!returned) {
-		const resolver = defaultReturn;
-		payload = await resolver({ event, op, model, state });
-	}
+        if (!returned) {
+                const resolver = defaultReturn;
+                payload = await resolver({ event, op, model, state });
+        }
 
-	const status = payload?.status && Number.isInteger(payload.status) ? payload.status : 200;
-	if (status !== 200) setResponseStatus(event, status);
-	return payload;
+        const status = payload?.status && Number.isInteger(payload.status) ? payload.status : 200;
+        if (status !== 200) setResponseStatus(event, status);
+        return payload;
 });
