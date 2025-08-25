@@ -76,6 +76,7 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 					timed({ label: "create-product", logResults: true }),
 					rateLimit({ maxRequests: 5, windowMs: 60000 }), // Max 5 por minuto
 					debug({ logState: false, logTiming: true }),
+					dbConnect(),
 					...mongoCrudBlock("create"), // Auto-detecta MongoDB y crea documento
 				], // Solo se ejecutan en servidor
 			}),
@@ -132,6 +133,7 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 				middlewares: [
 					timed({ label: "update-product", threshold: 500 }), // Solo loguear si toma >500ms
 					rateLimit({ maxRequests: 10, windowMs: 60000 }),
+					dbConnect(),
 					mongoUpdate({
 						filter: { _id: "$id" },
 						upsert: false, // No crear si no existe
@@ -147,6 +149,7 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 				middlewares: [
 					timed({ label: "delete-product" }),
 					rateLimit({ maxRequests: 3, windowMs: 60000 }), // Más restrictivo para delete
+					dbConnect(),
 					mongoDelete({
 						filter: { _id: "$id" },
 						confirmDeletion: false, // Para el demo, no requerir confirmación
@@ -162,6 +165,7 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 				middlewares: [
 					timed({ label: "save-or-update-product" }),
 					rateLimit({ maxRequests: 10, windowMs: 60000 }),
+					dbConnect(),
 					mongoSaveOrUpdate(), // Auto-detecta si crear o actualizar por _id
 				], // Solo se ejecutan en servidor
 			}),
@@ -197,6 +201,7 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 			getAllRequest({
 				middlewares: [
 					timed({ label: "get-on-sale" }),
+					dbConnect(),
 					...mongoBlock({
 						operation: "query",
 						filter: {
