@@ -149,6 +149,8 @@ export async function ensureBuiltInMiddlewares(): Promise<void> {
                         import("./client/data-middlewares.js"),
                         import("./hybrid/validation-middlewares.js"),
                         import("./hybrid/http-middlewares.js"),
+                        import("./hybrid/run-middlewares.js"),
+                        import("./hybrid/control-middlewares.js"),
                 ]).then(() => void 0);
         }
         await builtinsLoaded;
