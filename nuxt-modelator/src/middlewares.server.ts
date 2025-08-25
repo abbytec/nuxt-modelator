@@ -10,7 +10,7 @@ import type { H3Event } from "h3";
 
 // Resolver demo por defecto
 export const defaultReturn = ({ payload, state }: { event: H3Event; op: string; model: string; state: Record<string, any>; payload?: any }) =>
-	payload ?? state.data ?? state.savedData ?? state.validatedData ?? { ok: true };
+        payload ?? state.data ?? state.savedData ?? state.validatedData ?? null;
 
 // Re-exportar solo los helpers específicos de servidor e híbridos
 export {

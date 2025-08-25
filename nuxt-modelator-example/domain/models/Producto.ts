@@ -295,19 +295,20 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 		],
 
 		// 🏭 Productos por proveedor
-		getBySupplier: [
-			logRequest(),
-			getAllRequest({
-				middlewares: [
-					mongoQuery({
-						operation: "find",
-						filter: { supplierEmail: "$email" }, // $email de los parámetros
-						options: { sort: { name: 1 } },
-					}),
-				],
-			}),
-			populateArray(), // Sobrescribir con productos del proveedor
-		],
+                getBySupplier: [
+                        logRequest(),
+                        getAllRequest({
+                                middlewares: [
+                                        dbConnect(),
+                                        mongoQuery({
+                                                operation: "find",
+                                                filter: { supplierEmail: "$email" }, // $email de los parámetros
+                                                options: { sort: { name: 1 } },
+                                        }),
+                                ],
+                        }),
+                        populateArray(), // Sobrescribir con productos del proveedor
+                ],
 
 		// 🔢 Actualizar stock (usando middleware estándar)
 		updateStock: [
