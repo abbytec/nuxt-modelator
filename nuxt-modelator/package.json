@@ -1,6 +1,9 @@
 {
 	"name": "nuxt-modelator",
-	"version": "0.1.0",
+	"version": "1.0.0",
+	"repository": "https://github.com/abbytec/nuxt-modelator",
+	"author": "abbytec",
+	"license": "MIT",
 	"type": "module",
 	"main": "./dist/module.js",
 	"exports": {

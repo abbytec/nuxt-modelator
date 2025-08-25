@@ -1,5 +1,8 @@
 {
 	"name": "modelator-monorepo",
+	"repository": "https://github.com/abbytec/nuxt-modelator",
+	"author": "abbytec",
+	"license": "MIT",
 	"private": true,
 	"version": "0.0.0",
 	"workspaces": [

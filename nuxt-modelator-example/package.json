@@ -1,6 +1,8 @@
 {
 	"name": "nuxt-modelator-example",
-	"private": true,
+	"repository": "https://github.com/abbytec/nuxt-modelator",
+	"author": "abbytec",
+	"license": "MIT",
 	"type": "module",
 	"scripts": {
 		"dev": "nuxt dev",
