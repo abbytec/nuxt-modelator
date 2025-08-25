@@ -15,18 +15,12 @@ import {
 	rateLimit,
 	addToPlural,
 	populateArray,
+	postRequest,
 } from "nuxt-modelator/dist/middlewares";
 
 // Alias temporales para los nuevos middlewares híbridos
 // @ts-ignore - Los middlewares híbridos están disponibles en runtime pero faltan en las declaraciones
-const {
-        postAllRequest,
-        getAllRequest,
-        getRequest,
-        putRequest,
-        deleteRequest,
-        logRequest,
-} = require("nuxt-modelator/dist/middlewares");
+const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, logRequest } = require("nuxt-modelator/dist/middlewares");
 
 // ✨ MODELO COMPLETO CON MONGODB Y COMPOSICIÓN VERDADERA
 @Model(
@@ -50,16 +44,16 @@ const {
 		},
 	},
 	// ======= ENDPOINTS CON SEPARACIÓN CLIENT/SERVER =======
-        // ✨ NUEVA SINTAXIS HÍBRIDA:
-        // - logRequest(): Se ejecuta en cliente Y servidor para logging completo
-        // - postAllRequest/getAllRequest/etc.: Requests HTTP con middlewares anidados en servidor
-        // - addToPlural(): Se ejecuta solo en cliente después de la respuesta HTTP para CREAR
-        // - populateArray(): Sobrescriba el array completo con datos de lectura
+	// ✨ NUEVA SINTAXIS HÍBRIDA:
+	// - logRequest(): Se ejecuta en cliente Y servidor para logging completo
+	// - postAllRequest/getAllRequest/etc.: Requests HTTP con middlewares anidados en servidor
+	// - addToPlural(): Se ejecuta solo en cliente después de la respuesta HTTP para CREAR
+	// - populateArray(): Sobrescriba el array completo con datos de lectura
 	{
 		// 📋 CREATE: Crear nuevo producto
-                create: [
-                        logRequest(), // aparece en la consola del navegador y servidor
-                        postAllRequest({
+		create: [
+			logRequest(), // aparece en la consola del navegador y servidor
+			postRequest({
 				middlewares: [
 					timed({ label: "create-product", logResults: true }),
 					rateLimit({ maxRequests: 5, windowMs: 60000 }), // Max 5 por minuto
@@ -71,9 +65,9 @@ const {
 		],
 
 		// 📖 READ ALL: Obtener todos los productos (paginado)
-                getAll: [
-                        logRequest(),
-                        getAllRequest({
+		getAll: [
+			logRequest(),
+			getAllRequest({
 				middlewares: [
 					timed({ label: "get-all-products" }),
 					dbConnect(), // Auto-detecta MongoDB del dbConfig
@@ -92,9 +86,9 @@ const {
 		],
 
 		// 🔍 READ ONE: Obtener producto por ID
-                get: [
-                        logRequest(),
-                        getRequest({
+		get: [
+			logRequest(),
+			getRequest({
 				middlewares: [
 					timed({ label: "get-product-by-id" }),
 					dbConnect(),
@@ -107,9 +101,9 @@ const {
 		],
 
 		// ✏️ UPDATE: Actualizar producto existente
-                update: [
-                        logRequest({ logLevel: "info" }),
-                        putRequest({
+		update: [
+			logRequest({ logLevel: "info" }),
+			putRequest({
 				middlewares: [
 					timed({ label: "update-product", threshold: 500 }), // Solo loguear si toma >500ms
 					rateLimit({ maxRequests: 10, windowMs: 60000 }),
@@ -122,9 +116,9 @@ const {
 		],
 
 		// ❌ DELETE: Eliminar producto
-                delete: [
-                        logRequest({ logLevel: "warn" }), // Log más visible para operaciones de eliminación
-                        deleteRequest({
+		delete: [
+			logRequest({ logLevel: "warn" }), // Log más visible para operaciones de eliminación
+			deleteRequest({
 				middlewares: [
 					timed({ label: "delete-product" }),
 					rateLimit({ maxRequests: 3, windowMs: 60000 }), // Más restrictivo para delete
@@ -137,9 +131,9 @@ const {
 		],
 
 		// 🔄 SAVE OR UPDATE: Crear o actualizar (upsert)
-                saveOrUpdate: [
-                        logRequest(),
-                        postAllRequest({
+		saveOrUpdate: [
+			logRequest(),
+			postAllRequest({
 				middlewares: [
 					timed({ label: "save-or-update-product" }),
 					rateLimit({ maxRequests: 10, windowMs: 60000 }),
@@ -152,9 +146,9 @@ const {
 		// ======= MÉTODOS PERSONALIZADOS =======
 
 		// 🏷️ Buscar por categoría
-                getByCategory: [
-                        logRequest(),
-                        getAllRequest({
+		getByCategory: [
+			logRequest(),
+			getAllRequest({
 				middlewares: [
 					timed({ label: "get-by-category" }),
 					dbConnect(),
@@ -172,9 +166,9 @@ const {
 		],
 
 		// 💰 Productos en oferta
-                getOnSale: [
-                        logRequest(),
-                        getAllRequest({
+		getOnSale: [
+			logRequest(),
+			getAllRequest({
 				middlewares: [
 					timed({ label: "get-on-sale" }),
 					...mongoBlock({
@@ -195,9 +189,9 @@ const {
 		],
 
 		// 🔎 Búsqueda por texto completo
-                search: [
-                        logRequest(),
-                        getAllRequest({
+		search: [
+			logRequest(),
+			getAllRequest({
 				middlewares: [
 					timed({ label: "text-search" }),
 					dbConnect(),
@@ -219,9 +213,9 @@ const {
 		],
 
 		// 📊 Obtener estadísticas básicas
-                getStats: [
-                        logRequest(),
-                        getAllRequest({
+		getStats: [
+			logRequest(),
+			getAllRequest({
 				middlewares: [
 					timed({ label: "get-stats" }),
 					...mongoBlock({
@@ -234,9 +228,9 @@ const {
 		],
 
 		// 📈 Productos más caros
-                getMostExpensive: [
-                        logRequest(),
-                        getAllRequest({
+		getMostExpensive: [
+			logRequest(),
+			getAllRequest({
 				middlewares: [
 					...mongoBlock({
 						operation: "query",
@@ -252,9 +246,9 @@ const {
 		],
 
 		// 🆕 Productos recientes (últimos 30 días)
-                getRecent: [
-                        logRequest(),
-                        getAllRequest({
+		getRecent: [
+			logRequest(),
+			getAllRequest({
 				middlewares: [
 					timed({ label: "get-recent" }),
 					mongoQuery({
@@ -275,9 +269,9 @@ const {
 		],
 
 		// 🏭 Productos por proveedor
-                getBySupplier: [
-                        logRequest(),
-                        getAllRequest({
+		getBySupplier: [
+			logRequest(),
+			getAllRequest({
 				middlewares: [
 					mongoQuery({
 						operation: "find",
@@ -290,9 +284,9 @@ const {
 		],
 
 		// 🔢 Actualizar stock (usando middleware estándar)
-                updateStock: [
-                        logRequest(),
-                        putRequest({
+		updateStock: [
+			logRequest(),
+			putRequest({
 				middlewares: [
 					timed({ label: "update-stock" }),
 					rateLimit({ maxRequests: 5, windowMs: 60000 }),
