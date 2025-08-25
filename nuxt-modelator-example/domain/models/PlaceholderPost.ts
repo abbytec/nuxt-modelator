@@ -1,6 +1,15 @@
 import 'reflect-metadata'
 import { Model } from 'nuxt-modelator/dist/decorators'
-import { logRequest, getAllRequest } from 'nuxt-modelator/dist/middlewares'
+import { logRequest, getAllRequest, run } from 'nuxt-modelator/dist/middlewares'
+
+const limitFive = (ctx: any) => {
+  const data = ctx.args?.data
+  if (Array.isArray(data)) {
+    const sliced = data.slice(0, 5)
+    ctx.args.data = sliced
+    ctx.done(sliced)
+  }
+}
 
 @Model(
   {
@@ -11,6 +20,7 @@ import { logRequest, getAllRequest } from 'nuxt-modelator/dist/middlewares'
   {
     getAll: [
       logRequest(),
+      run(limitFive),
       getAllRequest({
         url: 'https://jsonplaceholder.typicode.com/posts',
       }),
