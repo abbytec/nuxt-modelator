@@ -28,7 +28,7 @@ let currentConnection: MongooseConnection | null = null;
 // ======= UTILIDADES HELPERS =======
 
 function getErrorMessage(error: unknown): string {
-	return error instanceof Error ? getErrorMessage(error) : String(error);
+        return error instanceof Error ? error.message : String(error);
 }
 
 // ======= UTILIDADES DE IMPORTACIÓN =======
