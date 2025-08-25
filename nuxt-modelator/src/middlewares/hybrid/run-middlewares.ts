@@ -41,4 +41,31 @@ export function createRunMiddleware(config?: RunConfig | ((ctx: any) => any) | P
 	};
 }
 
-autoRegisterFromModule({ createRunMiddleware }, "hybrid", "run-middlewares");
+export function createCatchMiddleware(
+	fn: (err: any, ctx: any) => any | Promise<any>,
+): HybridMiddleware {
+	return async (ctx, next) => {
+		try {
+			await next();
+		} catch (err) {
+			try {
+				const result = await fn(err, ctx);
+				if (typeof result !== "undefined") {
+					ctx.done(result);
+				}
+			} catch (handlerError) {
+				console.warn(
+					`[${ctx.stage}-catch] error executing catch action`,
+					handlerError,
+				);
+				throw handlerError;
+			}
+		}
+	};
+}
+
+autoRegisterFromModule(
+	{ createRunMiddleware, createCatchMiddleware },
+	"hybrid",
+	"run-middlewares",
+);
