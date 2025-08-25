@@ -72,7 +72,7 @@ export default eventHandler(async (event) => {
         const op = parseRoute(url, method, modelMeta);
         const model = modelMeta.resource;
         const specs = modelMeta.apiMethods[op] || [];
-        const args = getQuery(event);
+        let args: Record<string, any> = getQuery(event);
         const state: any = {};
         let returned = false;
         let payload: any;
@@ -81,12 +81,13 @@ export default eventHandler(async (event) => {
                 payload = p;
         };
 
-        // Validaciones básicas para operaciones que envían datos
-        if (["create", "createAll", "update", "updateAll", "saveOrUpdate"].includes(op)) {
+        // Leer body para métodos distintos de GET/HEAD
+        if (!["GET", "HEAD"].includes(method.toUpperCase())) {
                 try {
                         const body = await readBody(event);
                         if (body && typeof body === "object") {
                                 state.validatedData = body;
+                                args = { ...args, ...body };
                         }
                 } catch {}
         }

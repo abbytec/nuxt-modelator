@@ -137,12 +137,12 @@ export default eventHandler(async (event) => {
 	let op = parseRoute(url, method, modelMeta);
 	const model = modelMeta.resource;
 
-	// Construir args desde querystring
-	let args: Record<string, string> = {};
-	try {
-		const u = new URL(url, "http://localhost");
-		args = Object.fromEntries(u.searchParams.entries());
-	} catch {}
+        // Construir args desde querystring
+        let args: Record<string, any> = {};
+        try {
+                const u = new URL(url, "http://localhost");
+                args = Object.fromEntries(u.searchParams.entries());
+        } catch {}
 
 	// Permitir override de operación via __op
 	if (args.__op) {
@@ -161,22 +161,24 @@ export default eventHandler(async (event) => {
 		payload = p;
 	};
 
-	// Validaciones de entrada para operaciones que reciben datos
-        if (["create", "createAll", "update", "updateAll", "saveOrUpdate"].includes(op)) {
-		try {
-			const body = await readBody(event);
-			if (body) {
-				const validation = await processModelValidation(body, modelMeta);
-				if (!validation.isValid) {
-					setResponseStatus(event, 400);
-					return { code: "VALIDATION_ERROR", message: "Validation failed", validationErrors: validation.errors } as any;
-				}
-				state.validatedData = validation.transformedData;
-			}
-		} catch (e) {
-			console.warn("Body validation error:", e);
-		}
-	}
+        // Leer y validar body para requests que no sean GET/HEAD
+        const lowerMethod = method.toLowerCase();
+        if (!["get", "head"].includes(lowerMethod)) {
+                try {
+                        const body = await readBody(event);
+                        if (body) {
+                                const validation = await processModelValidation(body, modelMeta);
+                                if (!validation.isValid) {
+                                        setResponseStatus(event, 400);
+                                        return { code: "VALIDATION_ERROR", message: "Validation failed", validationErrors: validation.errors } as any;
+                                }
+                                state.validatedData = validation.transformedData;
+                                args = { ...args, ...validation.transformedData };
+                        }
+                } catch (e) {
+                        console.warn("Body validation error:", e);
+                }
+        }
 
 	await executeHybridMiddlewares(specs as EnhancedMiddlewareSpec[], {
 		event,
