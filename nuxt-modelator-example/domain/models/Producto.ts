@@ -80,7 +80,7 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 					...mongoCrudBlock("create"), // Auto-detecta MongoDB y crea documento
 				], // Solo se ejecutan en servidor
 			}),
-			addToPlural({ position: "unshift" }), // Se ejecuta en cliente después de la respuesta
+			populateArray(),
 		],
 
 		// 📖 READ ALL: Obtener todos los productos (paginado)
@@ -154,7 +154,16 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 						filter: { _id: "$id" },
 						confirmDeletion: false, // Para el demo, no requerir confirmación
 					}),
-				], // Solo se ejecutan en servidor
+					mongoQuery({
+						operation: "find",
+						options: {
+							limit: 50,
+							sort: { createdAt: -1 }, // Más recientes primero
+							// populate: ["supplier"] // Si tuviera relaciones
+						},
+					}),
+					populateArray(),
+				],
 			}),
 		],
 
@@ -327,8 +336,17 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 						filter: { _id: "$id" },
 						upsert: false,
 					}),
+					mongoQuery({
+						operation: "find",
+						options: {
+							limit: 50,
+							sort: { createdAt: -1 }, // Más recientes primero
+							// populate: ["supplier"] // Si tuviera relaciones
+						},
+					}),
 				],
 			}),
+			populateArray(),
 		],
 
 		// 🔎 Local-first por slug con fallback a servidor
