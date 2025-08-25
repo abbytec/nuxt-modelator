@@ -3,10 +3,11 @@ import { onMounted, ref } from 'vue'
 import { usePlaceholderPostStore } from '#nuxt-modelator/stores/usePlaceholderPostStore'
 
 const store = usePlaceholderPostStore()
+const posts = ref<any[]>([])
 const apiError = ref('')
 
 onMounted(async () => {
-  await store.getAll()
+  posts.value = await store.getAll()
   try {
     await $fetch('/api/placeholderPosts')
   } catch (err: any) {
@@ -18,8 +19,8 @@ onMounted(async () => {
 <template>
   <div class="p-4 space-y-4">
     <h1 class="text-xl font-bold">External Posts</h1>
-    <ul v-if="store.all && store.all.length" class="list-disc ml-5">
-      <li v-for="post in store.all.slice(0, 5)" :key="post.id">
+    <ul v-if="posts.length" class="list-disc ml-5">
+      <li v-for="post in posts.slice(0, 5)" :key="post.id">
         {{ post.title }}
       </li>
     </ul>

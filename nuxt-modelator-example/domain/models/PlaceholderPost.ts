@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { Model } from 'nuxt-modelator/dist/decorators'
-import { logRequest, getAllRequest, populateArray } from 'nuxt-modelator/dist/middlewares'
+import { logRequest, getAllRequest } from 'nuxt-modelator/dist/middlewares'
 
 @Model(
   {
@@ -14,7 +14,6 @@ import { logRequest, getAllRequest, populateArray } from 'nuxt-modelator/dist/mi
       getAllRequest({
         url: 'https://jsonplaceholder.typicode.com/posts',
       }),
-      populateArray(),
     ],
   }
 )
