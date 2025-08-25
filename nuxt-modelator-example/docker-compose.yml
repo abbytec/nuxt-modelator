@@ -6,7 +6,7 @@ services:
         container_name: nuxt-modelator-mongo
         restart: unless-stopped
         ports:
-            - "27018:27017"
+            - "27017:27017"
         environment:
             MONGO_INITDB_ROOT_USERNAME: modelator
             MONGO_INITDB_ROOT_PASSWORD: modelator123
