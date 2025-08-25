@@ -46,9 +46,11 @@ function buildRequestMiddleware(defaultMethod: string, usePlural: boolean) {
                                                         : rawData;
 
                                         const standardOps = new Set(["get", "getAll", "create", "createAll", "update", "updateAll", "delete", "deleteAll", "getByName"]);
-                                        const includeParams = method === "GET" || method === "DELETE" || !standardOps.has(ctx.op);
+                                        const includeParams = method === "GET" || method === "DELETE";
                                         const params = includeParams
                                                 ? { ...(ctx.args || {}), ...(standardOps.has(ctx.op) ? {} : { __op: ctx.op }) }
+                                                : !standardOps.has(ctx.op)
+                                                ? { __op: ctx.op }
                                                 : undefined;
 
                                         let headers = typeof config?.headers === "function" ? config.headers(ctx) : { ...(config?.headers || {}) };

@@ -1,13 +1,10 @@
-export type Stage = "server" | "client" | "isomorphic";
-
-export type MiddlewareSpec = string | { name: string; args?: any; stage?: "server" | "client" | "isomorphic" };
+export type MiddlewareSpec = string | { name: string; args?: any };
 
 // Nuevo tipo para middlewares híbridos con soporte de anidación
 export interface HybridMiddlewareSpec {
-	name: string;
-	args?: any;
-	stage?: "server" | "client" | "hybrid" | "isomorphic";
-	middlewares?: MiddlewareSpec[]; // Middlewares anidados que solo se ejecutan en servidor
+        name: string;
+        args?: any;
+        middlewares?: MiddlewareSpec[]; // Middlewares anidados que solo se ejecutan en servidor
 }
 
 // Tipo expandido que incluye todas las variantes

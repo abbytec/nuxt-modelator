@@ -125,48 +125,24 @@ async function resolveSimpleMiddleware(
 }
 
 async function resolveConfiguredMiddleware(
-	spec: MiddlewareSpec,
-	context: UnifiedContext
+        spec: MiddlewareSpec,
+        context: UnifiedContext
 ): Promise<((ctx: UnifiedContext, next: NextFunction) => Promise<void>) | null> {
-	if (typeof spec === "string") {
-		return resolveSimpleMiddleware(spec, context);
-	}
+        if (typeof spec === "string") {
+                return resolveSimpleMiddleware(spec, context);
+        }
+        const { name, args } = spec;
 
-	let effectiveStage = spec.stage;
+        // Intentar híbridos primero
+        const hybridFactory = hybridMiddlewares[name];
+        if (hybridFactory) {
+                const hybridMiddleware = hybridFactory(args);
+                return adaptHybridMiddleware(hybridMiddleware, context.stage);
+        }
 
-	// Auto-detectar stage para middlewares híbridos sin stage explícito
-	if (!effectiveStage) {
-		const { name } = spec;
-
-		if (name && hybridMiddlewares[name]) {
-			// Si es híbrido y estamos en cliente, asumir client
-			// Si es híbrido y estamos en servidor, asumir server
-			effectiveStage = context.stage;
-		} else {
-			// Si no es híbrido, usar comportamiento por defecto
-			effectiveStage = "server";
-		}
-	}
-
-	// Verificar si debe ejecutarse en este stage
-	const shouldExecute = effectiveStage === "isomorphic" || effectiveStage === context.stage;
-
-	if (!shouldExecute) {
-		return null;
-	}
-
-	const { name, args } = spec;
-
-	// Intentar híbridos primero
-	const hybridFactory = hybridMiddlewares[name];
-	if (hybridFactory) {
-		const hybridMiddleware = hybridFactory(args);
-		return adaptHybridMiddleware(hybridMiddleware, context.stage);
-	}
-
-	// Específicos por stage
-	if (context.stage === "server") {
-		const serverFactory = serverMiddlewares[name];
+        // Específicos por stage
+        if (context.stage === "server") {
+                const serverFactory = serverMiddlewares[name];
 		if (serverFactory) {
 			const serverMiddleware = serverFactory(args);
 			return adaptServerMiddleware(serverMiddleware);
@@ -179,27 +155,21 @@ async function resolveConfiguredMiddleware(
 		}
 	}
 
-	console.warn(`[composition-executor] Configured middleware '${name}' not found for stage '${context.stage}'`);
-	return null;
+        console.warn(`[composition-executor] Configured middleware '${name}' not found for stage '${context.stage}'`);
+        return null;
 }
 
 async function resolveHybridMiddleware(
-	spec: HybridMiddlewareSpec,
-	context: UnifiedContext
+        spec: HybridMiddlewareSpec,
+        context: UnifiedContext
 ): Promise<((ctx: UnifiedContext, next: NextFunction) => Promise<void>) | null> {
-	const shouldExecute = spec.stage === "hybrid" || !spec.stage || spec.stage === "isomorphic" || spec.stage === context.stage;
-
-	if (!shouldExecute) {
-		return null;
-	}
-
-	// Crear middleware que ejecuta anidados Y el principal
-	return async (ctx: UnifiedContext, next: NextFunction) => {
-		// Ejecutar middlewares anidados primero (solo en servidor por seguridad)
-		if (context.stage === "server" && spec.middlewares && spec.middlewares.length > 0) {
-			console.log(`[composition-executor] Executing ${spec.middlewares.length} nested middlewares for ${spec.name}`);
-			await executeMiddlewaresWithComposition(spec.middlewares, context);
-		}
+        // Crear middleware que ejecuta anidados Y el principal
+        return async (ctx: UnifiedContext, next: NextFunction) => {
+                // Ejecutar middlewares anidados primero (solo en servidor por seguridad)
+                if (context.stage === "server" && spec.middlewares && spec.middlewares.length > 0) {
+                        console.log(`[composition-executor] Executing ${spec.middlewares.length} nested middlewares for ${spec.name}`);
+                        await executeMiddlewaresWithComposition(spec.middlewares, context);
+                }
 
 		// Luego ejecutar el middleware principal
 		const mainMiddleware = await resolveConfiguredMiddleware({ name: spec.name, args: spec.args }, context);

@@ -4,6 +4,7 @@ import fg from "fast-glob";
 import { join } from "pathe";
 import { createJiti } from "jiti";
 import { getManifest } from "./registry.js";
+import { clientMiddlewares, serverMiddlewares, hybridMiddlewares, ensureBuiltInMiddlewares } from "./middlewares/auto-registry.js";
 import type { ModuleOptions, ModelMeta, Manifest } from "./types.js";
 
 // Auto-import decorators para asegurar que se registren
@@ -100,17 +101,20 @@ export async function ensureModelsRegistered() {
 				)}';\nexport * from '${resolve("./middlewares/registry.js")}';\nexport * from '${resolve("./middlewares/index.js")}';`,
 		});
 
-		// 4) Manifest generado
-		addTemplate({
-			filename: "nuxt-modelator/manifest.ts",
-			getContents: () => manifestTpl(manifestJson),
-		});
+                // 4) Manifest generado
+                addTemplate({
+                        filename: "nuxt-modelator/manifest.ts",
+                        getContents: () => manifestTpl(manifestJson),
+                });
 
-		// 5) Rutas + Stores por modelo
-		for (const m of manifest.models) {
-			emitRoutesForModel(m, resolve);
-			emitPiniaStore(m);
-		}
+                // Asegurar que los middlewares built-in estén registrados para detectar stages
+                await ensureBuiltInMiddlewares();
+
+                // 5) Rutas + Stores por modelo
+                for (const m of manifest.models) {
+                        emitRoutesForModel(m, resolve);
+                        emitPiniaStore(m);
+                }
 
 		// 6) Inspector opcional
 		if (options.inspector) {
@@ -127,25 +131,48 @@ const modulePortable = _module as unknown as PortableNuxtModule<ModuleOptions>;
 export default modulePortable;
 
 // ---- helpers ----
+const requestMiddlewareNames = new Set([
+        "postRequest",
+        "postAllRequest",
+        "getRequest",
+        "getAllRequest",
+        "putRequest",
+        "putAllRequest",
+        "deleteRequest",
+        "deleteAllRequest",
+]);
+
+function getMiddlewareStage(name: string, args?: any): "server" | "client" | "hybrid" {
+        if (serverMiddlewares[name]) return "server";
+        if (clientMiddlewares[name]) return "client";
+        if (hybridMiddlewares[name]) {
+                if (requestMiddlewareNames.has(name) && args && typeof args === "object" && (args as any).url) {
+                        return "client";
+                }
+                return "hybrid";
+        }
+        return "server";
+}
+
 function hasServerSpecs(opSpecs: any[]): boolean {
         const specs = Array.isArray(opSpecs) ? opSpecs : [];
 
-        // Si algún middleware de request se ejecuta solo en cliente (url externa), no generar endpoint
-        const hasClientRequest = specs.some(
+        const hasExternalRequest = specs.some(
                 (s) =>
                         typeof s === "object" &&
-                        s?.stage === "client" &&
-                        typeof s.name === "string" &&
-                        s.name.endsWith("Request")
+                        requestMiddlewareNames.has(s.name) &&
+                        s.args &&
+                        typeof s.args === "object" &&
+                        (s.args as any).url
         );
-        if (hasClientRequest) return false;
+        if (hasExternalRequest) return false;
 
-        return specs.some((s) => {
-                if (typeof s === "string") return true; // Middlewares tipo string son por defecto "server"
+        return specs.some((s: any) => {
                 if (!s) return false;
-                const stage = s.stage ?? "server";
-                // Considerar válidos: "server" e "isomorphic" (híbridos que se ejecutan en servidor también)
-                return stage === "server" || stage === "isomorphic";
+                const name = typeof s === "string" ? s : s.name;
+                const args = typeof s === "object" ? s.args : undefined;
+                const stage = getMiddlewareStage(name, args);
+                return stage === "server" || stage === "hybrid";
         });
 }
 
@@ -174,6 +201,11 @@ function emitRoutesForModel(m: ModelMeta, resolve: any) {
         }
         // Colección (create many / create on collection)
         if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).createAll)) {
+                addRoute(`${m.basePath}/${m.plural}`, "post", resolve);
+        }
+
+        // === SAVE OR UPDATE (UPSERT) ===
+        if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).saveOrUpdate)) {
                 addRoute(`${m.basePath}/${m.plural}`, "post", resolve);
         }
 
