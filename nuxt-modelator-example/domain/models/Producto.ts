@@ -1,5 +1,18 @@
 import "reflect-metadata";
-import { Model, Required, Email, NotEmpty, Trim, Slugify, PastDate, MaxLength, IsPositive, Length, Id, Unique } from "nuxt-modelator/dist/decorators";
+import {
+	Model,
+	Required,
+	Email,
+	NotEmpty,
+	Trim,
+	Slugify,
+	PastDate,
+	MaxLength,
+	IsPositive,
+	Length,
+	Id,
+	Unique,
+} from "nuxt-modelator/dist/decorators";
 import {
 	timed,
 	dbConnect,
@@ -9,14 +22,14 @@ import {
 	mongoDelete,
 	mongoSaveOrUpdate,
 	mongoCrudBlock,
-        mongoBlock,
-        mongoInfo,
-        debug,
-        rateLimit,
-        run,
-        addToPlural,
-        populateArray,
-        postRequest,
+	mongoBlock,
+	mongoInfo,
+	debug,
+	rateLimit,
+	run,
+	addToPlural,
+	populateArray,
+	postRequest,
 } from "nuxt-modelator/dist/middlewares";
 
 // Alias temporales para los nuevos middlewares híbridos
@@ -66,29 +79,29 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 		],
 
 		// 📖 READ ALL: Obtener todos los productos (paginado)
-                getAll: [
-                        logRequest(),
-                        run(() => console.log("inicio-cliente")),
-                        getAllRequest({
-                                middlewares: [
-                                        run(() => console.log("inicio-server")),
-                                        timed({ label: "get-all-products" }),
-                                        dbConnect(), // Auto-detecta MongoDB del dbConfig
-                                        mongoInfo(), // Agregar info de conexión al response
-                                        mongoQuery({
-                                                operation: "find",
-                                                options: {
-                                                        limit: 50,
-                                                        sort: { createdAt: -1 }, // Más recientes primero
-                                                        // populate: ["supplier"] // Si tuviera relaciones
-                                                },
-                                        }),
-                                        run(() => console.log("fin-server"), { after: true }),
-                                ],
-                        }),
-                        run(() => console.log("fin-cliente"), { after: true }),
-                        populateArray(), // Sobrescribir array completo con datos de DB
-                ],
+		getAll: [
+			logRequest(),
+			run(() => console.log("inicio-cliente")),
+			getAllRequest({
+				middlewares: [
+					run(() => console.log("inicio-server")),
+					timed({ label: "get-all-products" }),
+					dbConnect(), // Auto-detecta MongoDB del dbConfig
+					mongoInfo(), // Agregar info de conexión al response
+					mongoQuery({
+						operation: "find",
+						options: {
+							limit: 50,
+							sort: { createdAt: -1 }, // Más recientes primero
+							// populate: ["supplier"] // Si tuviera relaciones
+						},
+					}),
+					run(() => console.log("fin-server")),
+				],
+			}),
+			run(() => console.log("fin-cliente")),
+			populateArray(), // Sobrescribir array completo con datos de DB
+		],
 
 		// 🔍 READ ONE: Obtener producto por ID
 		get: [
@@ -308,9 +321,9 @@ export class Producto {
 	// ======= AUTO-GENERACIÓN DE SCHEMA MONGOOSE =======
 	// Los decorators se convierten automáticamente en configuración de schema
 
-        // 🆔 ID único (se mapea a _id en MongoDB)
-        @Id()
-        id?: string; // MongoDB generará automáticamente el ObjectId
+	// 🆔 ID único (se mapea a _id en MongoDB)
+	@Id()
+	id?: string; // MongoDB generará automáticamente el ObjectId
 
 	// 📛 Nombre del producto
 	@Required({ message: "El nombre del producto es obligatorio" })
@@ -320,11 +333,11 @@ export class Producto {
 	name: string = ""; // String, required, trimmed, max 255 chars
 
 	// 🔗 Slug para URLs amigables
-        @Trim()
-        @Slugify()
-        @Unique()
-        @MaxLength(300)
-        slug?: string; // String, auto-slugified, indexed uniquely
+	@Trim()
+	@Slugify()
+	@Unique()
+	@MaxLength(300)
+	slug?: string; // String, auto-slugified, indexed uniquely
 
 	// 📝 Descripción del producto
 	@Trim()
