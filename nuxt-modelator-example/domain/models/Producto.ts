@@ -30,6 +30,10 @@ import {
 	addToPlural,
 	populateArray,
 	postRequest,
+	// NUEVOS: middlewares cliente
+	saveOnStore,
+	cache,
+	getFromPluralFiltered,
 } from "nuxt-modelator/dist/middlewares";
 
 // Alias temporales para los nuevos middlewares híbridos
@@ -81,6 +85,7 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 		// 📖 READ ALL: Obtener todos los productos (paginado)
 		getAll: [
 			logRequest(),
+			cache({ ttl: 60000 }),
 			run(() => console.log("inicio-cliente")),
 			getAllRequest({
 				middlewares: [
@@ -106,6 +111,7 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 		// 🔍 READ ONE: Obtener producto por ID
 		get: [
 			logRequest(),
+			cache({ ttl: 30000 }),
 			getRequest({
 				middlewares: [
 					timed({ label: "get-product-by-id" }),
@@ -116,6 +122,7 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 					}),
 				],
 			}),
+			saveOnStore({ to: "entity" }),
 		],
 
 		// ✏️ UPDATE: Actualizar producto existente
@@ -159,6 +166,7 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 				], // Solo se ejecutan en servidor
 			}),
 			addToPlural({ position: "unshift" }), // Actualizar cliente después de la respuesta
+			saveOnStore({ to: "both", position: "unshift" }),
 		],
 
 		// ======= MÉTODOS PERSONALIZADOS =======
@@ -314,6 +322,22 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 					}),
 				],
 			}),
+		],
+
+		// 🔎 Local-first por slug con fallback a servidor
+		getBySlug: [
+			logRequest(),
+			getFromPluralFiltered({ slug: "$slug" }),
+			getRequest({
+				middlewares: [
+					dbConnect(),
+					mongoQuery({
+						operation: "findOne",
+						filter: { slug: "$slug" },
+					}),
+				],
+			}),
+			saveOnStore({ to: "entity" }),
 		],
 	}
 )

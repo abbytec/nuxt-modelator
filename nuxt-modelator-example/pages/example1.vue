@@ -6,6 +6,7 @@ import ProductsTab from '~/components/organisms/ProductsTab.vue'
 import CreateTab from '~/components/organisms/CreateTab.vue'
 import SearchTab from '~/components/organisms/SearchTab.vue'
 import FeaturesSection from '~/components/organisms/FeaturesSection.vue'
+import AdminTab from '~/components/organisms/AdminTab.vue'
 import { useProductoStore } from '#nuxt-modelator/stores/useProductoStore'
 
 const currentTab = ref('products')
@@ -34,12 +35,14 @@ onMounted(async () => {
             <button @click="currentTab = 'products'" :class="buttonClass('products')">📦 Productos</button>
             <button @click="currentTab = 'create'" :class="buttonClass('create')">➕ Crear</button>
             <button @click="currentTab = 'search'" :class="buttonClass('search')">🔍 Búsqueda</button>
+            <button @click="currentTab = 'admin'" :class="buttonClass('admin')">🛠️ Admin</button>
           </nav>
         </div>
         <div class="p-6">
           <ProductsTab v-if="currentTab === 'products'" />
           <CreateTab v-else-if="currentTab === 'create'" />
-          <SearchTab v-else />
+          <SearchTab v-else-if="currentTab === 'search'" />
+          <AdminTab v-else />
         </div>
       </div>
       <FeaturesSection />

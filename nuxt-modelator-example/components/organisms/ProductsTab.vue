@@ -23,6 +23,22 @@ const getProductsOnSale = async () => {
     console.error('Error obteniendo ofertas:', error)
   }
 }
+
+const getMostExpensive = async () => {
+  try {
+    await store.getMostExpensive()
+  } catch (error) {
+    console.error('Error obteniendo más caros:', error)
+  }
+}
+
+const getRecent = async () => {
+  try {
+    await store.getRecent()
+  } catch (error) {
+    console.error('Error obteniendo recientes:', error)
+  }
+}
 </script>
 
 <template>
@@ -33,6 +49,12 @@ const getProductsOnSale = async () => {
       </BaseButton>
       <BaseButton @click="getProductsOnSale" :disabled="store.loading.getOnSale" class="bg-green-600 text-white hover:bg-green-700 disabled:opacity-50">
         {{ store.loading.getOnSale ? '💰 Cargando...' : '💰 Solo Ofertas' }}
+      </BaseButton>
+      <BaseButton @click="getMostExpensive" :disabled="store.loading.getMostExpensive" class="bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50">
+        {{ store.loading.getMostExpensive ? '⏳...' : '💎 Más Caros' }}
+      </BaseButton>
+      <BaseButton @click="getRecent" :disabled="store.loading.getRecent" class="bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50">
+        {{ store.loading.getRecent ? '⏳...' : '🆕 Recientes' }}
       </BaseButton>
     </div>
 

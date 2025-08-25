@@ -1,5 +1,26 @@
 <script setup lang="ts">
+import BaseButton from '../atoms/BaseButton.vue'
+import { useProductoStore } from '#nuxt-modelator/stores/useProductoStore'
+
 const props = defineProps<{ product: any }>()
+const store = useProductoStore()
+
+const viewDetails = async () => {
+  const slug = props.product?.slug || props.product?.name?.toLowerCase()?.replace(/\s+/g, '-')
+  await store.getBySlug(slug)
+}
+
+const incStock = async () => {
+  const id = props.product?._id || props.product?.id
+  if (!id) return
+  await store.updateStock({ productId: id, data: { $set: { stock: (props.product.stock || 0) + 1 } } })
+}
+
+const deleteItem = async () => {
+  const id = props.product?._id || props.product?.id
+  if (!id) return
+  await store.delete(id)
+}
 </script>
 
 <template>
@@ -26,6 +47,12 @@ const props = defineProps<{ product: any }>()
           {{ props.product.stock || 0 }}
         </span>
       </div>
+    </div>
+
+    <div class="flex gap-2 mt-4">
+      <BaseButton class="bg-gray-100 text-gray-700 hover:bg-gray-200" @click="viewDetails">👁️ Ver</BaseButton>
+      <BaseButton class="bg-amber-500 text-white hover:bg-amber-600" @click="incStock">➕ Stock</BaseButton>
+      <BaseButton class="bg-red-600 text-white hover:bg-red-700" @click="deleteItem">🗑️ Eliminar</BaseButton>
     </div>
   </div>
 </template>
