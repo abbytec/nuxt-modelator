@@ -58,13 +58,16 @@ export interface ModelGlobalConfig {
 }
 
 export interface ModelApiMethods {
-	get?: EnhancedMiddlewareSpec[];
-	getAll?: EnhancedMiddlewareSpec[];
-	create?: EnhancedMiddlewareSpec[];
-	update?: EnhancedMiddlewareSpec[];
-	delete?: EnhancedMiddlewareSpec[];
-	getByName?: EnhancedMiddlewareSpec[];
-	[key: string]: EnhancedMiddlewareSpec[] | undefined; // Para métodos custom
+        get?: EnhancedMiddlewareSpec[];
+        getAll?: EnhancedMiddlewareSpec[];
+        create?: EnhancedMiddlewareSpec[];
+        createAll?: EnhancedMiddlewareSpec[];
+        update?: EnhancedMiddlewareSpec[];
+        updateAll?: EnhancedMiddlewareSpec[];
+        delete?: EnhancedMiddlewareSpec[];
+        deleteAll?: EnhancedMiddlewareSpec[];
+        getByName?: EnhancedMiddlewareSpec[];
+        [key: string]: EnhancedMiddlewareSpec[] | undefined; // Para métodos custom
 }
 
 // ======= TIPOS DE MIDDLEWARES CON COMPOSICIÓN =======

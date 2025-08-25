@@ -155,35 +155,35 @@ function emitRoutesForModel(m: ModelMeta, resolve: any) {
 		addRoute(`${m.basePath}/${m.plural}`, "get", resolve);
 	}
 
-	// === POST (CREATE) ===
-	// Singular (alias para create one)
-	if (hasServerSpecs((m.apiMethods as any).create)) {
-		addRoute(`${m.basePath}/${m.resource}`, "post", resolve);
-	}
-	// Colección (create many / create on collection)
-	if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).create)) {
-		addRoute(`${m.basePath}/${m.plural}`, "post", resolve);
-	}
+        // === POST (CREATE) ===
+        // Singular (alias para create one)
+        if (hasServerSpecs((m.apiMethods as any).create)) {
+                addRoute(`${m.basePath}/${m.resource}`, "post", resolve);
+        }
+        // Colección (create many / create on collection)
+        if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).createAll)) {
+                addRoute(`${m.basePath}/${m.plural}`, "post", resolve);
+        }
 
-	// === PUT (UPDATE) ===
-	// Singular (update one)
-	if (hasServerSpecs((m.apiMethods as any).update)) {
-		addRoute(`${m.basePath}/${m.resource}`, "put", resolve);
-	}
-	// Colección (bulk update)
-	if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).update)) {
-		addRoute(`${m.basePath}/${m.plural}`, "put", resolve);
-	}
+        // === PUT (UPDATE) ===
+        // Singular (update one)
+        if (hasServerSpecs((m.apiMethods as any).update)) {
+                addRoute(`${m.basePath}/${m.resource}`, "put", resolve);
+        }
+        // Colección (bulk update)
+        if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).updateAll)) {
+                addRoute(`${m.basePath}/${m.plural}`, "put", resolve);
+        }
 
-	// === DELETE ===
-	// Singular (delete one)
-	if (hasServerSpecs((m.apiMethods as any).delete)) {
-		addRoute(`${m.basePath}/${m.resource}`, "delete", resolve);
-	}
-	// Colección (bulk delete)
-	if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).delete)) {
-		addRoute(`${m.basePath}/${m.plural}`, "delete", resolve);
-	}
+        // === DELETE ===
+        // Singular (delete one)
+        if (hasServerSpecs((m.apiMethods as any).delete)) {
+                addRoute(`${m.basePath}/${m.resource}`, "delete", resolve);
+        }
+        // Colección (bulk delete)
+        if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).deleteAll)) {
+                addRoute(`${m.basePath}/${m.plural}`, "delete", resolve);
+        }
 
 	// === Subrutas por nombre ===
 	// Singular: /by-name (alias)
