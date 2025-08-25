@@ -29,43 +29,49 @@ async function ensureModelsLoaded(): Promise<void> {
 }
 
 // Determinar operación de la URL
-function parseRoute(url: string, method: string) {
-	const pathParts = url.replace(/^\/api\//, "").split("/");
-	if (pathParts[pathParts.length - 1]?.includes("?")) {
-		pathParts[pathParts.length - 1] = pathParts[pathParts.length - 1].split("?")[0];
-	}
-	if (pathParts.length === 1) {
-		const resource = pathParts[0];
-		if (method.toLowerCase() === "post") {
-			return { model: resource, op: "create" };
-		} else {
-			return { model: resource, op: "getAll" };
-		}
-	} else if (pathParts.length === 2 && pathParts[1] === "by-name") {
-		return { model: pathParts[0], op: "getByName" };
-	}
-	return { model: pathParts[0], op: "get" };
+function parseRoute(url: string, method: string, modelMeta: any) {
+        const pathParts = url.replace(/^\/api\//, "").split("/");
+        if (pathParts[pathParts.length - 1]?.includes("?")) {
+                pathParts[pathParts.length - 1] = pathParts[pathParts.length - 1].split("?")[0];
+        }
+        const m = method.toLowerCase();
+        if (pathParts.length === 1) {
+                const resource = pathParts[0];
+                const isSingular = resource === modelMeta.resource;
+                if (m === "post") return isSingular ? "create" : "createAll";
+                if (m === "put" || m === "patch") return isSingular ? "update" : "updateAll";
+                if (m === "delete") return isSingular ? "delete" : "deleteAll";
+                return isSingular ? "get" : "getAll";
+        } else if (pathParts.length === 2 && pathParts[1] === "by-name") {
+                return "getByName";
+        }
+        return "get";
 }
 
 export default eventHandler(async (event) => {
-	const url = event.node.req.url || "";
-	const method = event.node.req.method || "GET";
+        const url = event.node.req.url || "";
+        const method = event.node.req.method || "GET";
 
-	// Parsear la ruta para determinar modelo y operación
-	let { model: routeModel, op } = parseRoute(url, method);
+        // Asegurar que los modelos estén disponibles
+        await ensureModelsLoaded();
 
-	// Asegurar que los modelos estén disponibles
-	await ensureModelsLoaded();
+        // Determinar recurso de la ruta
+        const pathParts = url.replace(/^\/api\//, "").split("/");
+        let routeResource = pathParts[0];
+        if (routeResource?.includes("?")) {
+                routeResource = routeResource.split("?")[0];
+        }
 
-	// Obtener manifest del registry
-	const man = getManifest();
-	let modelMeta = (man.models as any[]).find((m: any) => m.resource === routeModel || m.plural === routeModel);
-	if (!modelMeta) {
-		return { error: true, message: `Model not found: ${routeModel}`, statusCode: 404 } as any;
-	}
+        // Obtener manifest del registry
+        const man = getManifest();
+        let modelMeta = (man.models as any[]).find((m: any) => m.resource === routeResource || m.plural === routeResource);
+        if (!modelMeta) {
+                return { error: true, message: `Model not found: ${routeResource}`, statusCode: 404 } as any;
+        }
 
-	const model = modelMeta.resource;
-	const specs = modelMeta.apiMethods[op] || [];
+        const op = parseRoute(url, method, modelMeta);
+        const model = modelMeta.resource;
+        const specs = modelMeta.apiMethods[op] || [];
 	const state: any = {};
 	let returned = false;
 	let payload: any;
@@ -74,8 +80,8 @@ export default eventHandler(async (event) => {
 		payload = p;
 	};
 
-	// Validaciones básicas para create
-	if (op === "create") {
+        // Validaciones básicas para operaciones que envían datos
+        if (["create", "createAll", "update", "updateAll"].includes(op)) {
 		try {
 			const body = await readBody(event);
 			if (body && typeof body === "object") {

@@ -35,7 +35,7 @@ function buildRequestMiddleware(defaultMethod: string, usePlural: boolean) {
                                                         ? undefined
                                                         : ctx.state.validatedData ?? ctx.args?.data ?? ctx.args;
 
-                                        const standardOps = new Set(["get", "getAll", "create", "update", "delete", "getByName"]);
+                                        const standardOps = new Set(["get", "getAll", "create", "createAll", "update", "updateAll", "delete", "deleteAll", "getByName"]);
                                         const includeParams = method === "GET" || method === "DELETE" || !standardOps.has(ctx.op);
                                         const params = includeParams
                                                 ? { ...(ctx.args || {}), ...(standardOps.has(ctx.op) ? {} : { __op: ctx.op }) }

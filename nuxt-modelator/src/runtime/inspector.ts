@@ -26,44 +26,81 @@ async function ensureModelsLoaded(): Promise<void> {
 	}
 }
 
+function hasServerSpecs(opSpecs: any[]): boolean {
+        return (Array.isArray(opSpecs) ? opSpecs : []).some((s) => {
+                if (typeof s === "string") return true;
+                if (!s) return false;
+                const stage = s.stage ?? "server";
+                return stage === "server" || stage === "isomorphic";
+        });
+}
+
 export default eventHandler(async () => {
-	await ensureModelsLoaded();
-	const manifest = getManifest();
-	return {
-		title: "Nuxt Modelator Inspector",
-		version: "1.0.0",
-		timestamp: new Date().toISOString(),
-		models: (manifest.models as any[]).map((m: any) => ({
-			className: m.className,
-			resource: m.resource,
-			plural: m.plural,
-			basePath: m.basePath,
-			operations: Object.keys(m.apiMethods).filter((key) => Array.isArray(m.apiMethods[key]) && m.apiMethods[key].length > 0),
-			enableList: m.globalConfig.enableList,
-			customReturn: m.globalConfig.customReturn,
-			properties: m.props.map((prop: any) => ({
-				name: prop.name,
-				decorators: prop.transforms.map((t: any) => ({
-					type: t.kind,
-					name: t.kind === "transform" ? t.transformer.name : t.validator.name,
-					config: t.config,
-				})),
-			})),
-			endpoints: [
-				`GET ${m.basePath}/${m.resource}`,
-				...(m.globalConfig.enableList !== false ? [`GET ${m.basePath}/${m.plural}`, `POST ${m.basePath}/${m.plural}`] : []),
-				...(m.apiMethods.getByName ? [`GET ${m.basePath}/${m.plural}/by-name`] : []),
-			],
-		})),
-		stats: {
-			totalModels: (manifest.models as any[]).length,
-			totalEndpoints: (manifest.models as any[]).reduce((acc: any, m: any) => {
-				let count = 1; // GET singular
-				if (m.globalConfig.enableList !== false) count += 2; // GET list + POST create
-				if (m.apiMethods.getByName) count += 1; // GET by-name
-				return acc + count;
-			}, 0),
-			totalProperties: (manifest.models as any[]).reduce((acc: any, m: any) => acc + m.props.length, 0),
-		},
-	};
+        await ensureModelsLoaded();
+        const manifest = getManifest();
+        const models = (manifest.models as any[]).map((m: any) => {
+                const endpoints: string[] = [];
+                if (hasServerSpecs((m.apiMethods as any).get)) {
+                        endpoints.push(`GET ${m.basePath}/${m.resource}`);
+                }
+                if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).getAll)) {
+                        endpoints.push(`GET ${m.basePath}/${m.plural}`);
+                }
+                if (hasServerSpecs((m.apiMethods as any).create)) {
+                        endpoints.push(`POST ${m.basePath}/${m.resource}`);
+                }
+                if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).createAll)) {
+                        endpoints.push(`POST ${m.basePath}/${m.plural}`);
+                }
+                if (hasServerSpecs((m.apiMethods as any).update)) {
+                        endpoints.push(`PUT ${m.basePath}/${m.resource}`);
+                }
+                if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).updateAll)) {
+                        endpoints.push(`PUT ${m.basePath}/${m.plural}`);
+                }
+                if (hasServerSpecs((m.apiMethods as any).delete)) {
+                        endpoints.push(`DELETE ${m.basePath}/${m.resource}`);
+                }
+                if (m.globalConfig.enableList !== false && hasServerSpecs((m.apiMethods as any).deleteAll)) {
+                        endpoints.push(`DELETE ${m.basePath}/${m.plural}`);
+                }
+                if (hasServerSpecs((m.apiMethods as any).getByName)) {
+                        endpoints.push(`GET ${m.basePath}/${m.resource}/by-name`);
+                        if (m.globalConfig.enableList !== false) {
+                                endpoints.push(`GET ${m.basePath}/${m.plural}/by-name`);
+                        }
+                }
+
+                return {
+                        className: m.className,
+                        resource: m.resource,
+                        plural: m.plural,
+                        basePath: m.basePath,
+                        operations: Object.keys(m.apiMethods).filter((key) => Array.isArray(m.apiMethods[key]) && m.apiMethods[key].length > 0),
+                        enableList: m.globalConfig.enableList,
+                        customReturn: m.globalConfig.customReturn,
+                        properties: m.props.map((prop: any) => ({
+                                name: prop.name,
+                                decorators: prop.transforms.map((t: any) => ({
+                                        type: t.kind,
+                                        name: t.kind === "transform" ? t.transformer.name : t.validator.name,
+                                        config: t.config,
+                                })),
+                        })),
+                        endpoints,
+                        propsCount: m.props.length,
+                };
+        });
+
+        return {
+                title: "Nuxt Modelator Inspector",
+                version: "1.0.0",
+                timestamp: new Date().toISOString(),
+                models: models.map(({ propsCount, ...rest }) => rest),
+                stats: {
+                        totalModels: models.length,
+                        totalEndpoints: models.reduce((acc, m) => acc + m.endpoints.length, 0),
+                        totalProperties: models.reduce((acc, m) => acc + (m as any).propsCount, 0),
+                },
+        };
 });

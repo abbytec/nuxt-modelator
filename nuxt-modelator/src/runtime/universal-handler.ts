@@ -70,21 +70,22 @@ async function processModelValidation(data: any, modelMeta: any) {
 
 // Determinar operación de la URL
 function parseRoute(url: string, method: string, modelMeta: any): string {
-	const pathParts = url.replace(/^\/api\//, "").split("/");
-	if (pathParts[pathParts.length - 1]?.includes("?")) {
-		pathParts[pathParts.length - 1] = pathParts[pathParts.length - 1].split("?")[0];
-	}
-	const m = method.toLowerCase();
-	if (pathParts.length === 1) {
-		const resource = pathParts[0];
-		if (m === "post") return "create";
-		if (m === "put" || m === "patch") return "update";
-		if (m === "delete") return "delete";
-		return resource === modelMeta.resource ? "get" : "getAll";
-	} else if (pathParts.length === 2 && pathParts[1] === "by-name") {
-		return "getByName";
-	}
-	return "get";
+        const pathParts = url.replace(/^\/api\//, "").split("/");
+        if (pathParts[pathParts.length - 1]?.includes("?")) {
+                pathParts[pathParts.length - 1] = pathParts[pathParts.length - 1].split("?")[0];
+        }
+        const m = method.toLowerCase();
+        if (pathParts.length === 1) {
+                const resource = pathParts[0];
+                const isSingular = resource === modelMeta.resource;
+                if (m === "post") return isSingular ? "create" : "createAll";
+                if (m === "put" || m === "patch") return isSingular ? "update" : "updateAll";
+                if (m === "delete") return isSingular ? "delete" : "deleteAll";
+                return isSingular ? "get" : "getAll";
+        } else if (pathParts.length === 2 && pathParts[1] === "by-name") {
+                return "getByName";
+        }
+        return "get";
 }
 
 function expandServerSpecs(specs: any[]): EnhancedMiddlewareSpec[] {
@@ -161,8 +162,8 @@ export default eventHandler(async (event) => {
 		payload = p;
 	};
 
-	// Validaciones de entrada para operaciones que reciben datos
-	if (["create", "update"].includes(op)) {
+        // Validaciones de entrada para operaciones que reciben datos
+        if (["create", "createAll", "update", "updateAll"].includes(op)) {
 		try {
 			const body = await readBody(event);
 			if (body) {
