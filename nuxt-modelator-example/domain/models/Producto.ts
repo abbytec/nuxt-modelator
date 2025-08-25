@@ -322,8 +322,9 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 				middlewares: [
 					timed({ label: "update-stock" }),
 					rateLimit({ maxRequests: 5, windowMs: 60000 }),
+					dbConnect(),
 					mongoUpdate({
-						filter: { _id: "$productId" },
+						filter: { _id: "$id" },
 						upsert: false,
 					}),
 				],
