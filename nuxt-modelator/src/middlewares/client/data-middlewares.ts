@@ -134,10 +134,10 @@ function buildRequestMiddleware(defaultMethod: string, usePlural: boolean) {
 					: `${basePath}/${usePlural ? plural : ctx.model}`;
 
 				const rawData = ctx.state.validatedData ?? ctx.args?.data ?? ctx.args;
-				const body =
+				let body =
 					method === "GET" || method === "DELETE" ? undefined : config?.bodyMapper ? await config.bodyMapper(rawData, ctx) : rawData;
 
-				const params = method === "GET" || method === "DELETE" ? ctx.args || {} : undefined;
+				const params = ctx.args || {};
 
 				let headers = typeof config?.headers === "function" ? config.headers(ctx) : { ...(config?.headers || {}) };
 				if (!config?.url) {
