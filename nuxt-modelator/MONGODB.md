@@ -46,9 +46,8 @@ npm install mongoose @types/mongoose
 	}
 )
 export class Producto {
-	@Required()
-	@UUID()
-	id!: string;
+        @Id()
+        id?: string;
 
 	@Required()
 	@NotEmpty()
@@ -66,6 +65,7 @@ Los **decorators** se convierten automáticamente en configuración de Mongoose:
 | Decorator          | Schema Mongoose                                |
 | ------------------ | ---------------------------------------------- |
 | `@Required()`      | `{ required: true }`                           |
+| `@Id()`            | `{ type: ObjectId }`                           |
 | `@Email()`         | `{ type: String, validate: emailValidator }`   |
 | `@UUID()`          | `{ type: String }`                             |
 | `@Url()`           | `{ type: String }`                             |
@@ -73,6 +73,7 @@ Los **decorators** se convierten automáticamente en configuración de Mongoose:
 | `@DateISO()`       | `{ type: Date }`                               |
 | `@Trim()`          | `{ type: String, transform: trimFunction }`    |
 | `@Slugify()`       | `{ type: String, transform: slugifyFunction }` |
+| `@Unique()`        | `{ unique: true }`                             |
 | `@PastDate()`      | `{ type: Date }`                               |
 | `@FutureDate()`    | `{ type: Date }`                               |
 
