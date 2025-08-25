@@ -32,7 +32,7 @@ const { postAllRequest, getAllRequest, getRequest, putRequest, deleteRequest, lo
 		// 🍃 CONFIGURACIÓN DE MONGODB
 		dbConfig: {
 			type: "mongo",
-			connectionURI: "mongodb://modelator:modelator123@localhost:27018/nuxt-modelator-demo",
+			connectionURI: "mongodb://modelator:modelator123@localhost:27017/",
 			options: {
 				dbName: "nuxt-modelator-demo",
 				maxPoolSize: 10,

@@ -26,7 +26,7 @@ docker-compose ps
 
 Esto creará:
 
--   **MongoDB** en `localhost:27018`
+-   **MongoDB** en `localhost:27017`
 -   **Mongo Express** (admin UI) en `http://localhost:8081`
     -   Usuario: `admin` / Contraseña: `admin123`
 -   **Datos de ejemplo** automáticamente insertados
@@ -91,7 +91,7 @@ El modelo demuestra todas las características de nuxt-modelator:
 		// ✨ CONFIGURACIÓN DE MONGODB
 		dbConfig: {
 			type: "mongo",
-			connectionURI: "mongodb://nuxt-app:nuxt-app-123@localhost:27018/nuxt-modelator-demo",
+			connectionURI: "mongodb://nuxt-app:nuxt-app-123@localhost:27017/",
 		},
 	},
 	{
@@ -173,7 +173,7 @@ El script de inicialización (`mongo-init/01-init.js`) crea:
 ### Acceso a MongoDB
 
 -   **Mongo Express**: http://localhost:8081 (admin/admin123)
--   **Conexión directa**: `mongodb://nuxt-app:nuxt-app-123@localhost:27018/nuxt-modelator-demo`
+-   **Conexión directa**: `mongodb://nuxt-app:nuxt-app-123@localhost:27017/nuxt-modelator-demo`
 
 ## 🎪 Características Avanzadas
 

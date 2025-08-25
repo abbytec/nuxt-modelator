@@ -21,7 +21,7 @@ echo "📀 1. Levantando MongoDB con Docker Compose..."
 docker-compose up -d
 
 if [ $? -eq 0 ]; then
-    echo "✅ MongoDB iniciado correctamente en puerto 27018"
+    echo "✅ MongoDB iniciado correctamente en puerto 27017"
     echo "✅ Mongo Express disponible en http://localhost:8081 (admin/admin123)"
 else
     echo "❌ Error levantando MongoDB"
@@ -71,7 +71,7 @@ echo ""
 echo "🎉 ¡Demo listo para usar!"
 echo ""
 echo "📊 Servicios disponibles:"
-echo "  - MongoDB:      http://localhost:27018"
+echo "  - MongoDB:      http://localhost:27017"
 echo "  - Mongo Express: http://localhost:8081 (admin/admin123)"
 echo "  - Nuxt App:     http://localhost:3000 (ejecutar 'npm run dev')"
 echo ""
